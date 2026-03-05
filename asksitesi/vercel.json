@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+
+    { "source": "/create", "destination": "/create.html" },
+    { "source": "/templates", "destination": "/templates.html" },
+
+    { "source": "/demo/:tpl", "destination": "/demo/:tpl.html" },
+
+    { "source": "/builder/:slug", "destination": "/builder.html" },
+
+    { "source": "/:slug", "destination": "/slug.html" }
+  ]
+}

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sayfanı Oluştur — askimiz.com</title>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/create.css"/>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a class="brand" href="/">
+        <div class="logo"></div>
+        <div class="t"><b>askimiz.com</b><span>çiftlere özel mini site</span></div>
+      </a>
+      <nav class="nav">
+        <a class="btn" href="/templates">Şablonlar</a>
+        <a class="btn primary" href="/create">Sayfanı Oluştur</a>
+      </nav>
+    </div>
+  </header>
+  <div class="container">
+  <h1 class="h2">Sayfanı Oluştur</h1>
+  <p class="muted" style="margin-top:8px">Paket + şablon + ek özellikleri seç. Ödeme sonrası içerikleri yükle ve yayınla.</p>
+
+  <div class="grid two" style="margin-top:14px">
+    <div class="card"><div class="p">
+      <b>1) URL Seç</b>
+      <div class="muted small" style="margin-top:6px">Örn: batikan.sezin</div>
+      <div class="row" style="margin-top:10px">
+        <input id="slug" class="input" placeholder="batikan.sezin" value="batikan.sezin"/>
+        <button id="btnSlug" class="btn" type="button">Kontrol Et</button>
+      </div>
+      <div class="small" style="margin-top:10px"><span class="muted">Oluşan URL:</span> <span id="slugPreview" class="kbd">askimiz.com/batikan.sezin</span></div>
+      <div id="slugMsg" class="small" style="margin-top:8px"></div>
+
+      <hr class="sep"/>
+
+      <b>2) Paket Seç</b>
+      <div class="grid" style="margin-top:10px">
+        <label class="radio"><input type="radio" name="plan" value="starter"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Giriş</b><b>999 TL</b></div><div class="small muted" style="margin-top:4px">3 foto + mini hikaye + özel URL</div></div></label>
+        <label class="radio" style="border-color:#111"><input type="radio" name="plan" value="standard"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Standart ⭐</b><b>1499 TL</b></div><div class="small muted" style="margin-top:4px">En popüler: 10 foto + premium görünüm</div></div></label>
+        <label class="radio"><input type="radio" name="plan" value="premium"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Premium 👑</b><b>1999 TL</b></div><div class="small muted" style="margin-top:4px">25 foto + timeline + premium efektler</div></div></label>
+      </div>
+
+      <hr class="sep"/>
+
+      <b>3) Şablon Seç</b>
+      <div class="grid" style="margin-top:10px">
+        <label class="radio"><input type="radio" name="template" value="t1"/><div style="flex:1"><b>Romantic Classic</b><div class="small muted">Klasik romantik, premium his</div></div></label>
+        <label class="radio"><input type="radio" name="template" value="t2"/><div style="flex:1"><b>Minimal Love</b><div class="small muted">Modern, sade, şık</div></div></label>
+        <label class="radio"><input type="radio" name="template" value="t3"/><div style="flex:1"><b>Memory Timeline</b><div class="small muted">Anı odaklı timeline</div></div></label>
+      </div>
+
+      <hr class="sep"/>
+
+      <b>4) Ek Özellikler</b>
+      <div class="grid" style="margin-top:10px">
+        <label class="check"><input id="ad_music" type="checkbox"/><div><b>🎵 Sayfada müzik</b> <span class="muted">(99 TL)</span><div class="small muted">Mobilde butonla başlatılır.</div></div></label>
+        <label class="check"><input id="ad_lock" type="checkbox"/><div><b>🔒 Kilit ekranı</b> <span class="muted">(49 TL)</span><div class="small muted">PIN ile sayfayı kilitle.</div></div></label>
+        <div id="addonsDynamic"></div>
+      </div>
+    </div></div>
+
+    <div class="card"><div class="p">
+      <b>Özet</b>
+      <div class="muted small" style="margin-top:6px">Seçimlerin toplamı</div>
+
+      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
+        <div class="small muted">Toplam</div>
+        <div id="total" class="total">1499 TL</div>
+        <div class="small muted" style="margin-top:6px">Canlı ödeme: webhook ile doğrulanır.</div>
+      </div>
+
+      <div id="suggestion" class="notice" style="margin-top:12px;display:none">
+        <b>STANDART paket daha mantıklı</b>
+        <div class="small" style="margin-top:6px">Eklerle birlikte Standart paket daha avantajlı.</div>
+      </div>
+
+      <button id="btnPay" class="btn primary" style="width:100%;margin-top:12px" type="button">Ödemeye Geç (DEV)</button>
+      <div class="small muted" style="margin-top:10px">DEV modda ödeme yapılmış kabul edilir ve builder linki açılır.</div>
+
+      <hr class="sep"/>
+
+      <b>Ne olacak?</b>
+      <ol class="muted" style="margin-top:8px;padding-left:18px;line-height:1.8">
+        <li>Paket + şablon + ekleri seç</li>
+        <li>Ödemeyi tamamla</li>
+        <li>Foto/Metin/Müzik yükle</li>
+        <li>Yayınla → <span class="kbd">askimiz.com/slug</span></li>
+      </ol>
+    </div></div>
+  </div>
+</div>
+
+  <footer class="footer">
+    <div class="container">
+      <div>© 2026 askimiz.com</div>
+      <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
+    </div>
+  </footer>
+  <script type="module" src="/assets/js/create.js"></script>
+</body>
+</html>
