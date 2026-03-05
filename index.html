@@ -3,117 +3,39 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>askimiz.com — Sevginizi dijital hatıraya dönüştürün</title>
+  <title>Demo t3 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
-  <link rel="stylesheet" href="/assets/css/landing.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <a class="brand" href="/">
-        <div class="logo"></div>
-        <div class="t"><b>askimiz.com</b><span>çiftlere özel mini site</span></div>
-      </a>
-      <nav class="nav">
-        <a class="btn" href="/templates">Şablonlar</a>
-        <a class="btn primary" href="/create">Sayfanı Oluştur</a>
-      </nav>
-    </div>
-  </header>
-  <div class="container">
-  <section class="hero">
-    <div>
-      <h1 class="h1">Sevginizi dijital bir hatıraya dönüştürün.</h1>
-      <p class="muted" style="font-size:16px;margin-top:10px">
-        2 dakikada sipariş verin, sayfanız anında hazır:
-        <span class="kbd">askimiz.com/isim.isim</span>
-      </p>
-      <div class="row" style="margin-top:14px">
-        <a class="btn primary" href="/create">Sayfanı Oluştur</a>
-        <a class="btn" href="/templates">Şablonlara Bak</a>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <span class="badge">✅ Mobil uyumlu</span>
-        <span class="badge">⚡ Hızlı yayın</span>
-        <span class="badge">🔒 Opsiyonel kilit</span>
-      </div>
-    </div>
+  <div id="root"></div>
+  <script type="module">
+    import { renderTemplate } from '/assets/js/templates.js';
 
-    <div class="mock">
-      <div class="inner">
-        <div class="small muted">Örnek URL</div>
-        <div style="font-weight:900;font-size:18px;margin-top:6px">askimiz.com/batikan.sezin</div>
-        <div class="thumbs">
-          <div class="thumb"></div><div class="thumb"></div><div class="thumb"></div>
-          <div class="thumb"></div><div class="thumb"></div><div class="thumb"></div>
-        </div>
-        <div style="height:38px;border-radius:18px;background:#1111;margin-top:12px"></div>
-      </div>
-    </div>
-  </section>
+    const site = {
+      slug: 'demo',
+      plan: 'premium',
+      templateId: 't3',
+      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
+      photoLimit: 25,
+      musicUrl: null,
+      lockEnabled: false,
+      content: {
+        names1: 'Batıkan',
+        names2: 'Sezin',
+        date: '2025-07-17',
+        story: 'Bu bir demo. Şablonu göstermek için hazırlanmıştır.',
+        outro: 'Sonsuzluğumuzun bir parçası…',
+        timeline: [
+          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
+          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
+          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
+        ]
+      },
+      photos: Array.from({length: 9}).map((_,i)=>`https://picsum.photos/seed/askimiz-t3-${i}/900/900`)
+    };
 
-  <hr class="sep"/>
-
-  <section>
-    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px">
-      <h2 class="h2">Paketler</h2>
-      <a class="muted" href="/create">Hemen oluştur →</a>
-    </div>
-
-    <div class="grid packs" style="margin-top:12px">
-      <div class="card"><div class="p">
-        <div style="display:flex;justify-content:space-between;align-items:center"><b>Giriş</b><b>999 TL</b></div>
-        <div class="muted" style="margin-top:8px">3 foto + mini hikaye + özel URL</div>
-        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
-      </div></div>
-
-      <div class="card" style="border-color:#111"><div class="p">
-        <div style="display:flex;justify-content:space-between;align-items:center"><b>Standart ⭐</b><b>1499 TL</b></div>
-        <div class="muted" style="margin-top:8px">En popüler: 10 foto + premium görünüm</div>
-        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
-      </div></div>
-
-      <div class="card"><div class="p">
-        <div style="display:flex;justify-content:space-between;align-items:center"><b>Premium 👑</b><b>1999 TL</b></div>
-        <div class="muted" style="margin-top:8px">25 foto + timeline + premium efektler</div>
-        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
-      </div></div>
-    </div>
-  </section>
-
-  <hr class="sep"/>
-
-  <section>
-    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px">
-      <h2 class="h2">3 Hazır Şablon</h2>
-      <a class="muted" href="/templates">Hepsini gör →</a>
-    </div>
-    <div class="grid packs" style="margin-top:12px">
-      <div class="card"><div class="p">
-        <b>Romantic Classic</b>
-        <div class="muted" style="margin-top:8px">Klasik romantik, premium his</div>
-        <a class="btn" style="width:100%;margin-top:12px" href="/demo/t1">Demo</a>
-      </div></div>
-      <div class="card"><div class="p">
-        <b>Minimal Love</b>
-        <div class="muted" style="margin-top:8px">Modern, sade, şık</div>
-        <a class="btn" style="width:100%;margin-top:12px" href="/demo/t2">Demo</a>
-      </div></div>
-      <div class="card"><div class="p">
-        <b>Memory Timeline</b>
-        <div class="muted" style="margin-top:8px">Anı odaklı timeline</div>
-        <a class="btn" style="width:100%;margin-top:12px" href="/demo/t3">Demo</a>
-      </div></div>
-    </div>
-  </section>
-</div>
-
-  <footer class="footer">
-    <div class="container">
-      <div>© 2026 askimiz.com</div>
-      <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
-    </div>
-  </footer>
-  
+    document.getElementById('root').innerHTML = renderTemplate('t3', site);
+  </script>
 </body>
 </html>

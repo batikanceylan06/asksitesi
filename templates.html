@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Şablonlar — askimiz.com</title>
+  <title>Builder — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
-  
+  <link rel="stylesheet" href="/assets/css/builder.css"/>
 </head>
 <body>
   <header class="header">
@@ -20,33 +20,50 @@
       </nav>
     </div>
   </header>
-  <div class="container">
-  <h1 class="h2">Şablonlar</h1>
-  <p class="muted" style="margin-top:8px">Aynı içerik, farklı premium görünüm. Satışta 3 hazır şablon.</p>
+  <div class="container" id="root">
+  <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+    <div>
+      <h1 class="h2">Builder: <span id="slugText" class="kbd"></span></h1>
+      <div class="muted small" style="margin-top:6px">İçeriği gir, foto/müzik yükle, yayınla.</div>
+      <a id="previewLink" class="muted small" href="#">Önizleme</a>
+    </div>
+    <div class="row" style="flex:0 0 auto">
+      <button id="saveBtn" class="btn" type="button">Kaydet</button>
+      <button id="publishBtn" class="btn primary" type="button">Yayınla</button>
+    </div>
+  </div>
 
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:14px">
+  <div class="grid builder" style="margin-top:14px">
     <div class="card"><div class="p">
-      <b>Romantic Classic</b>
-      <div class="muted" style="margin-top:8px">Klasik romantik, premium his</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/t1">Demo</a>
-        <a class="btn primary" href="/create">Seç</a>
+      <b>Metinler</b>
+      <div class="row" style="margin-top:10px">
+        <div><div class="small muted">İsim 1</div><input id="names1" class="input" value="Batıkan"/></div>
+        <div><div class="small muted">İsim 2</div><input id="names2" class="input" value="Sezin"/></div>
       </div>
+      <div style="margin-top:10px"><div class="small muted">Tarih</div><input id="date" class="input" value="2025-07-17"/></div>
+      <div style="margin-top:10px"><div class="small muted">Hikaye</div><textarea id="story" class="input"></textarea></div>
+      <div style="margin-top:10px"><div class="small muted">Kapanış Notu</div><textarea id="outro" class="input"></textarea></div>
     </div></div>
+
     <div class="card"><div class="p">
-      <b>Minimal Love</b>
-      <div class="muted" style="margin-top:8px">Modern, sade, şık</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/t2">Demo</a>
-        <a class="btn primary" href="/create">Seç</a>
+      <b>Eklentiler</b>
+
+      <div id="lockBox" style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
+        <div style="font-weight:800">🔒 Kilit Ekranı</div>
+        <div class="small muted" style="margin-top:6px">PIN girersen sayfa kilitlenir.</div>
+        <input id="lockpin" class="input" placeholder="PIN" inputmode="numeric" style="margin-top:10px"/>
       </div>
-    </div></div>
-    <div class="card"><div class="p">
-      <b>Memory Timeline</b>
-      <div class="muted" style="margin-top:8px">Anı odaklı timeline</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/t3">Demo</a>
-        <a class="btn primary" href="/create">Seç</a>
+
+      <div id="photoBox" style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
+        <div style="font-weight:800">📸 Foto Yükle</div>
+        <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:10px"/>
+        <div id="photoGrid" class="thumbgrid" style="margin-top:10px"></div>
+      </div>
+
+      <div id="musicBox" style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
+        <div style="font-weight:800">🎵 Müzik Yükle</div>
+        <input id="musicInput" type="file" accept="audio/mpeg,audio/mp3,audio/wav" style="margin-top:10px"/>
+        <div id="musicStatus" class="small muted" style="margin-top:8px">Henüz müzik yok.</div>
       </div>
     </div></div>
   </div>
@@ -58,6 +75,6 @@
       <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
     </div>
   </footer>
-  
+  <script type="module" src="/assets/js/builder.js"></script>
 </body>
 </html>

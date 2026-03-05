@@ -1,26 +1,45 @@
-# askimiz.com — Static HTML/CSS/JS + Vercel Functions + Vercel Postgres + Vercel Blob
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-Next.js yok. Statik sayfalar root'ta (`index.html`, `create.html`, `builder.html`, `slug.html`).
-Dinamik işlemler `api/` altında Vercel Serverless Functions.
+CREATE TABLE IF NOT EXISTS sites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE NOT NULL,
+  plan text NOT NULL,
+  template_id text NOT NULL,
+  addons jsonb NOT NULL DEFAULT '{}'::jsonb,
+  content jsonb NOT NULL DEFAULT '{}'::jsonb,
+  photo_limit int NOT NULL DEFAULT 3,
+  music_url text,
+  lock_pin_hash text,
+  status text NOT NULL DEFAULT 'draft',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
-## Kurulum
-1) Vercel'e import/deploy et
-2) Storage > Postgres + Blob ekle (projeye bağla)
-3) Postgres Query tabında `scripts/schema.sql` çalıştır
-4) Local env:
-   ```bash
-   vercel env pull .env.development.local
-   npm i
-   npx vercel dev
-   ```
+CREATE TABLE IF NOT EXISTS assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('photo','music')),
+  url text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-## URL'ler
-- / (landing)
-- /create (paket+ek seçim)
-- /builder/{slug}?token=... (içerik paneli)
-- /{slug} (satılan sayfa)
-- /demo/t1 /demo/t2 /demo/t3
+CREATE TABLE IF NOT EXISTS orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text NOT NULL,
+  plan text NOT NULL,
+  template_id text NOT NULL,
+  addons jsonb NOT NULL DEFAULT '{}'::jsonb,
+  total_price int NOT NULL,
+  payment_status text NOT NULL DEFAULT 'pending',
+  provider_ref text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-## DEV ödeme
-PAYMENT_MODE=dev iken /create üzerinden checkout yapınca sistem ödeme yapılmış sayar ve builder linki verir.
-Canlı ödeme için `api/checkout.js` ve bir webhook dosyası ile sağlayıcı bağlanır.
+CREATE TABLE IF NOT EXISTS builder_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text UNIQUE NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
+  token_hash text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

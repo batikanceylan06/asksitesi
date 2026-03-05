@@ -3,82 +3,39 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Builder — askimiz.com</title>
+  <title>Demo t1 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
-  <link rel="stylesheet" href="/assets/css/builder.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <a class="brand" href="/">
-        <div class="logo"></div>
-        <div class="t"><b>askimiz.com</b><span>çiftlere özel mini site</span></div>
-      </a>
-      <nav class="nav">
-        <a class="btn" href="/templates">Şablonlar</a>
-        <a class="btn primary" href="/create">Sayfanı Oluştur</a>
-      </nav>
-    </div>
-  </header>
-  <div class="container" id="root">
-  <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
-    <div>
-      <h1 class="h2">Builder: <span id="slugText" class="kbd"></span></h1>
-      <div class="muted small" style="margin-top:6px">İçeriği gir, foto/müzik yükle, yayınla.</div>
-      <a id="previewLink" class="muted small" href="#">Önizleme</a>
-    </div>
-    <div class="row" style="flex:0 0 auto">
-      <button id="saveBtn" class="btn" type="button">Kaydet</button>
-      <button id="publishBtn" class="btn primary" type="button">Yayınla</button>
-    </div>
-  </div>
+  <div id="root"></div>
+  <script type="module">
+    import { renderTemplate } from '/assets/js/templates.js';
 
-  <div class="grid builder" style="margin-top:14px">
-    <div class="card"><div class="p">
-      <b>Metinler</b>
-      <div class="row" style="margin-top:10px">
-        <div><div class="small muted">İsim 1</div><input id="names1" class="input" value="Batıkan"/></div>
-        <div><div class="small muted">İsim 2</div><input id="names2" class="input" value="Sezin"/></div>
-      </div>
-      <div style="margin-top:10px"><div class="small muted">Tarih (YYYY-MM-DD)</div><input id="date" class="input" value="2025-07-17"/></div>
-      <div style="margin-top:10px"><div class="small muted">Hikaye</div><textarea id="story" class="input" placeholder="Hikayeniz..."></textarea></div>
-      <div style="margin-top:10px"><div class="small muted">Kapanış Notu</div><textarea id="outro" class="input" placeholder="Sonsuzluğumuz..."></textarea></div>
-    </div></div>
+    const site = {
+      slug: 'demo',
+      plan: 'premium',
+      templateId: 't1',
+      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
+      photoLimit: 25,
+      musicUrl: null,
+      lockEnabled: false,
+      content: {
+        names1: 'Batıkan',
+        names2: 'Sezin',
+        date: '2025-07-17',
+        story: 'Bu bir demo. Şablonu göstermek için hazırlanmıştır.',
+        outro: 'Sonsuzluğumuzun bir parçası…',
+        timeline: [
+          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
+          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
+          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
+        ]
+      },
+      photos: Array.from({length: 9}).map((_,i)=>`https://picsum.photos/seed/askimiz-t1-${i}/900/900`)
+    };
 
-    <div class="card"><div class="p">
-      <b>Eklentiler</b>
-
-      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
-        <div style="font-weight:800">🔒 Kilit Ekranı</div>
-        <div class="small muted" style="margin-top:6px">PIN girersen sayfa kilitlenir. Boş bırak → kilit kapalı.</div>
-        <input id="lockpin" class="input" placeholder="PIN" inputmode="numeric" style="margin-top:10px"/>
-      </div>
-
-      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
-        <div style="font-weight:800">📸 Foto Yükle</div>
-        <div class="small muted" style="margin-top:6px">Limit: paket+eklere göre.</div>
-        <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" style="margin-top:10px"/>
-        <div id="photoGrid" class="thumbgrid" style="margin-top:10px"></div>
-      </div>
-
-      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
-        <div style="font-weight:800">🎵 Müzik Yükle</div>
-        <div class="small muted" style="margin-top:6px">Müzik eklentisi alındıysa sayfada buton çıkar.</div>
-        <input id="musicInput" type="file" accept="audio/mpeg,audio/mp3,audio/wav" style="margin-top:10px"/>
-        <div id="musicStatus" class="small muted" style="margin-top:8px">Henüz müzik yok.</div>
-      </div>
-
-      <div class="notice" style="margin-top:12px">Önizleme linki token’lıdır: paylaşma. Yayınlayınca normal linki paylaş.</div>
-    </div></div>
-  </div>
-</div>
-
-  <footer class="footer">
-    <div class="container">
-      <div>© 2026 askimiz.com</div>
-      <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
-    </div>
-  </footer>
-  <script type="module" src="/assets/js/builder.js"></script>
+    document.getElementById('root').innerHTML = renderTemplate('t1', site);
+  </script>
 </body>
 </html>
