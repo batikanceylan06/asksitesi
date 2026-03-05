@@ -17,14 +17,25 @@ module.exports = async (req, res) => {
   if(!['starter','standard','premium'].includes(plan)) return json(res, 400, { error:'Plan geçersiz' });
   if(!['t1','t2','t3'].includes(templateId)) return json(res, 400, { error:'Şablon geçersiz' });
 
-  const total = computeTotal(plan, addons);
-  const photoLimit = computePhotoLimit(plan, addons);
+  // Server-side rules
+  let tpl = templateId;
+  let addonsFixed = addons;
+
+  if(plan === 'starter'){
+    tpl = 't1'; // no template choice
+  }
+  if(plan === 'premium'){
+    addonsFixed = Object.assign({}, addons, { music:true, lock:true, theme:true, animations:true, video:true, photoPack:null });
+  }
+
+  const total = computeTotal(plan, addonsFixed);
+  const photoLimit = computePhotoLimit(plan, addonsFixed);
 
   await sql`
     INSERT INTO sites (slug, plan, template_id, addons, content, photo_limit, status)
     VALUES (
-      ${slug}, ${plan}, ${templateId},
-      ${JSON.stringify(addons)}::jsonb,
+      ${slug}, ${plan}, ${tpl},
+      ${JSON.stringify(addonsFixed)}::jsonb,
       ${JSON.stringify({names1:'İsim 1',names2:'İsim 2',date:'',story:'',outro:'',timeline:[]})}::jsonb,
       ${photoLimit},
       'draft'
@@ -39,7 +50,7 @@ module.exports = async (req, res) => {
 
   const { rows } = await sql`
     INSERT INTO orders (site_slug, plan, template_id, addons, total_price, payment_status)
-    VALUES (${slug}, ${plan}, ${templateId}, ${JSON.stringify(addons)}::jsonb, ${total}, 'pending')
+    VALUES (${slug}, ${plan}, ${tpl}, ${JSON.stringify(addonsFixed)}::jsonb, ${total}, 'pending')
     RETURNING id;
   `;
   const orderId = rows[0].id;

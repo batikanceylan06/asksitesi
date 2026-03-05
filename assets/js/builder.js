@@ -1,5 +1,5 @@
 import { pathSlug, qs } from './slug-util.js';
-import { postJSON } from './api.js';
+import { postJSON, getJSON } from './api.js';
 
 const q=(s)=>document.querySelector(s);
 
@@ -19,6 +19,34 @@ async function main(){
     return;
   }
 
+  let site=null;
+  try{
+    site=await getJSON(`/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`);
+  }catch{}
+
+  const allowMusic = site ? (site.plan==='premium' || site.addons?.music===true) : true;
+  const allowLock  = site ? (site.plan==='premium' || site.addons?.lock===true) : true;
+
+  if(site?.photoLimit){
+    const note=document.createElement('div');
+    note.className='small muted';
+    note.style.marginTop='6px';
+    note.textContent=`Foto limitin: ${site.photoLimit}`;
+    const photoBox=q('#photoBox');
+    photoBox.insertBefore(note, photoBox.querySelector('input'));
+  }
+
+  if(!allowMusic){
+    const box=q('#musicBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🎵 Müzik Yükle</div><div class="small muted" style="margin-top:6px">Bu paket için müzik eklentisi alınmamış.</div>`;
+  }
+  if(!allowLock){
+    const box=q('#lockBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
+  }
+
   q('#slugText').textContent=slug;
   q('#previewLink').href=`/${slug}?token=${encodeURIComponent(token)}`;
   q('#previewLink').textContent=`Önizleme: /${slug}?token=...`;
@@ -28,13 +56,13 @@ async function main(){
       await postJSON('/api/builder-save',{
         slug, token,
         content:{
-          names1:q('#names1').value,
-          names2:q('#names2').value,
-          date:q('#date').value,
-          story:q('#story').value,
-          outro:q('#outro').value
+          names1:q('#names1')?.value||'',
+          names2:q('#names2')?.value||'',
+          date:q('#date')?.value||'',
+          story:q('#story')?.value||'',
+          outro:q('#outro')?.value||''
         },
-        lockPin:q('#lockpin').value||null
+        lockPin: allowLock ? (q('#lockpin')?.value||null) : null
       });
       alert('Kaydedildi ✅');
     }catch(e){ alert(e.message||'Kaydetme hatası'); }
@@ -61,6 +89,7 @@ async function main(){
   q('#musicInput').addEventListener('change', async (e)=>{
     const f=e.target.files?.[0]; e.target.value='';
     if(!f) return;
+    if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');
     try{
       await uploadRaw(f,'music',slug,token);
       q('#musicStatus').textContent='Müzik yüklendi ✅';

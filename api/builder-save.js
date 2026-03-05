@@ -18,8 +18,12 @@ module.exports = async (req, res) => {
   const ok = await verifyBuilderToken(slug, token);
   if(!ok) return json(res, 401, { error:'Token geçersiz' });
 
-  const { rows } = await sql`SELECT slug FROM sites WHERE slug=${slug} LIMIT 1;`;
+  const { rows } = await sql`SELECT slug, plan, addons FROM sites WHERE slug=${slug} LIMIT 1;`;
   if(!rows[0]) return json(res, 404, { error:'Site yok' });
+
+  const plan = rows[0].plan;
+  const addons = rows[0].addons || {};
+  const allowLock = (plan === 'premium') || (addons.lock === true);
 
   await sql`
     UPDATE sites SET content=${
@@ -35,7 +39,7 @@ module.exports = async (req, res) => {
     WHERE slug=${slug};
   `;
 
-  if(lockPin && String(lockPin).trim().length >= 3){
+  if(allowLock && lockPin && String(lockPin).trim().length >= 3){
     const hash = await bcrypt.hash(String(lockPin).trim(), 10);
     await sql`UPDATE sites SET lock_pin_hash=${hash}, updated_at=now() WHERE slug=${slug};`;
   }else{

@@ -1,8 +1,10 @@
 export const PLAN_PRICE={starter:999,standard:1499,premium:1999};
-export const PLAN_PHOTO_LIMIT={starter:3,standard:10,premium:25};
 export const ADDON_PRICE={music:99,lock:49,theme:149,photoPack_to10:269,photoPack_to25:399,animations:199,video:299};
 
 export function computeTotal(plan,addons){
+  // Premium pakette tüm opsiyonlar dahildir.
+  if(plan==='premium') return PLAN_PRICE.premium;
+
   let total=PLAN_PRICE[plan]||0;
   if(addons.music) total+=ADDON_PRICE.music;
   if(addons.lock) total+=ADDON_PRICE.lock;
@@ -13,6 +15,7 @@ export function computeTotal(plan,addons){
   if(plan!=='premium' && addons.video) total+=ADDON_PRICE.video;
   return total;
 }
+
 export function upgradeSuggestion(plan,addons){
   const total=computeTotal(plan,addons);
   if(plan==='starter' && total>=PLAN_PRICE.standard) return {to:'standard',reason:'Eklerle birlikte Standart paket daha avantajlı.'};

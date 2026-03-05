@@ -10,8 +10,7 @@ async function main(){
   const url = token ? `/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}` : `/api/site?slug=${encodeURIComponent(slug)}`;
   const data = await getJSON(url);
 
-  const root = document.getElementById('root');
-  root.innerHTML = renderTemplate(data.templateId, data);
+  document.getElementById('root').innerHTML = renderTemplate(data.templateId, data);
 
   const slot = document.querySelector('#musicSlot');
   if(data.addons?.music && data.musicUrl) mountMusicPlayer(slot, data.musicUrl);

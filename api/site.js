@@ -26,17 +26,26 @@ module.exports = async (req, res) => {
     if(!ok) return json(res, 404, { error:'Sayfa bulunamadı' });
   }
 
+  // effective addons
+  let addonsOut = site.addons || {};
+  if(site.plan === 'premium'){
+    addonsOut = Object.assign({}, addonsOut, { music:true, lock:true, theme:true, animations:true, video:true, photoPack:null });
+  }
+  if(site.plan === 'standard'){
+    addonsOut = Object.assign({}, addonsOut, { theme:true });
+  }
+
   const { rows: arows } = await sql`
     SELECT url FROM assets WHERE site_slug=${slug} AND type='photo' ORDER BY created_at ASC;
   `;
   const photos = arows.map(r => r.url);
 
-  const photoLimit = computePhotoLimit(site.plan, site.addons || {});
+  const photoLimit = computePhotoLimit(site.plan, addonsOut || {});
   return json(res, 200, {
     slug: site.slug,
     plan: site.plan,
     templateId: site.template_id,
-    addons: site.addons || {},
+    addons: addonsOut || {},
     content: site.content || {},
     photoLimit,
     musicUrl: site.music_url || null,

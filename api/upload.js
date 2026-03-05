@@ -21,6 +21,9 @@ module.exports = async (req, res) => {
   const site = srows[0];
   if(!site) return json(res, 404, { error:'Site yok' });
 
+  const allowMusic = (site.plan === 'premium') || ((site.addons||{}).music === true);
+  if(type === 'music' && !allowMusic) return json(res, 400, { error:'Müzik eklentisi yok.' });
+
   if(type === 'photo'){
     const limit = computePhotoLimit(site.plan, site.addons || {});
     const { rows:crows } = await sql`SELECT COUNT(*)::int AS c FROM assets WHERE site_slug=${slug} AND type='photo';`;
@@ -37,10 +40,7 @@ module.exports = async (req, res) => {
   const blob = await put(pathname, buf, { access:'public', addRandomSuffix:false });
 
   await sql`INSERT INTO assets (site_slug, type, url) VALUES (${slug}, ${type}, ${blob.url});`;
-
-  if(type === 'music'){
-    await sql`UPDATE sites SET music_url=${blob.url}, updated_at=now() WHERE slug=${slug};`;
-  }
+  if(type === 'music') await sql`UPDATE sites SET music_url=${blob.url}, updated_at=now() WHERE slug=${slug};`;
 
   return json(res, 200, { url: blob.url, pathname: blob.pathname });
 };
