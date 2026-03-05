@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Demo T3 — askimiz.com</title>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import {{ renderTemplate }} from '/assets/js/templates.js';
+    const site={{
+      slug:'demo',
+      plan:'premium',
+      templateId:'t3',
+      addons:{{music:true,lock:false,animations:true,video:true,theme:true,photoPack:null}},
+      photoLimit:25,
+      musicUrl:null,
+      lockEnabled:false,
+      content:{{
+        names1:'Batıkan',
+        names2:'Sezin',
+        date:'2025-07-17',
+        story:'Bu bir demo. Şablonu göstermek için hazırlanmıştır. Satın aldıktan sonra fotoğraflarınızı ve hikayenizi ekleyerek yayınlayabilirsiniz.',
+        outro:'Sonsuzluğumuzun bir parçası…',
+        timeline:[
+          {{title:'Tanıştık',date:'2024-01-10',text:'Her şey burada başladı.'}},
+          {{title:'İlk Buluşma',date:'2024-02-02',text:'Heyecan ve mutluluk.'}},
+          {{title:'Bugün',date:'2026-03-05',text:'Daha da güçlüyüz.'}}
+        ]
+      }},
+      photos:Array.from({{length:9}}).map((_,i)=>`https://picsum.photos/seed/askimiz-t3-${{i}}/900/900`)
+    }};
+    document.getElementById('root').innerHTML = renderTemplate('t3', site);
+  </script>
+</body>
+</html>
