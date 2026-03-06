@@ -1,240 +1,189 @@
-import { pathSlug, qs } from './slug-util.js';
-import { postJSON, getJSON } from './api.js';
+import { normalizeSlug, isValidSlug } from './slug-util.js';
+import { postJSON } from './api.js';
+import { computeTotal, upgradeSuggestion } from './pricing.js';
 
+const state = {
+  plan: 'standard',
+  templateId: 't1',
+  addons: { music:false, lock:false, theme:false, photoPack:null, animations:false, video:false }
+};
 const q=(s)=>document.querySelector(s);
 
-async function uploadRaw(file,type,slug,token){
-  const url=`/api/upload?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&filename=${encodeURIComponent(file.name)}`;
-  const r=await fetch(url,{method:'PUT',headers:{'content-type':file.type||'application/octet-stream'},body:file});
-  const j=await r.json().catch(()=> ({}));
-  if(!r.ok) throw new Error(j.error||'Upload hatası');
-  return j.url;
-}
+const TEMPLATE_SETS = {
+  starter: [
+    { id:'s1', name:'Starter (Sabit)', desc:'Tek şablon — sade' }
+  ],
+  standard: [
+    { id:'t1', name:'Romantic Classic', desc:'Klasik romantik' },
+    { id:'t2', name:'Minimal Love', desc:'Modern sade' },
+    { id:'t3', name:'Memory Timeline', desc:'Timeline (standart)' }
+  ],
+  premium: [
+    { id:'p1', name:'Royal Glow', desc:'Glass + glow + premium galeri' },
+    { id:'p2', name:'Cinematic Story', desc:'Film vibe + chapter + video' },
+    { id:'p3', name:'Infinity Timeline Deluxe', desc:'Deluxe timeline + sayaç' }
+  ]
+};
 
-function renderRepeater(holder, items, schema, title){
-  holder.innerHTML = `
-    <div class="tcard" style="border-radius:18px">
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-        <b>${title}</b>
-        <button class="btn" type="button" data-add>+ Ekle</button>
-      </div>
-      <div data-list style="margin-top:10px; display:grid; gap:10px"></div>
-    </div>
-  `;
-  const list = holder.querySelector('[data-list]');
-  const addBtn = holder.querySelector('[data-add]');
+function renderTemplateOptions(){
+  const plan = q('input[name="plan"]:checked')?.value || 'standard';
+  const list = TEMPLATE_SETS[plan];
+  const holder = q('#templateOptions');
 
-  function rowHtml(it, idx){
-    const fields = schema.map(s=>{
-      const v = it[s.k] || '';
-      if(s.type === 'textarea'){
-        return `<div><div class="small muted">${s.label}</div><textarea class="input" data-idx="${idx}" data-k="${s.k}">${v}</textarea></div>`;
-      }
-      return `<div><div class="small muted">${s.label}</div><input class="input" value="${v}" data-idx="${idx}" data-k="${s.k}" /></div>`;
-    }).join('');
-    return `
-      <div class="tcard" style="border-radius:18px">
-        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-          <b>#${idx+1}</b>
-          <button class="btn" type="button" data-del="${idx}">Sil</button>
+  holder.innerHTML = list.map(t=>`
+    <label class="radio">
+      <input type="radio" name="template" value="${t.id}"/>
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;gap:12px">
+          <b>${t.name}</b>
+          <span class="kbd">${t.id}</span>
         </div>
-        <div style="margin-top:10px; display:grid; gap:10px">${fields}</div>
+        <div class="small muted" style="margin-top:4px">${t.desc}</div>
       </div>
-    `;
-  }
+    </label>
+  `).join('');
 
-  function render(){
-    list.innerHTML = items.map((it, idx)=>rowHtml(it, idx)).join('') || `<div class="muted small">Henüz ek yok.</div>`;
-    list.querySelectorAll('button[data-del]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const i = Number(btn.getAttribute('data-del'));
-        items.splice(i,1);
-        render();
-      });
-    });
-    list.querySelectorAll('input[data-idx], textarea[data-idx]').forEach(el=>{
-      el.addEventListener('input', ()=>{
-        const i = Number(el.getAttribute('data-idx'));
-        const k = el.getAttribute('data-k');
-        items[i][k] = el.value;
-      });
-    });
-  }
+  const first = holder.querySelector('input[name="template"]');
+  if(first) first.checked = true;
 
-  addBtn.addEventListener('click', ()=>{
-    const obj = {};
-    schema.forEach(s=>obj[s.k]='');
-    items.push(obj);
-    render();
-  });
+  q('#tplNote').style.display = (plan === 'starter') ? 'block' : 'none';
 
-  render();
+  document.querySelectorAll('input[name="template"]').forEach(r=>r.addEventListener('change', recalc));
 }
 
-async function main(){
-  const slug=pathSlug();
-  const token=qs('token')||'';
-  if(!token){
-    q('#root').innerHTML=`<div class="container"><div class="card"><div class="p"><div class="h2">Builder</div><div class="err" style="margin-top:8px">Token yok. Bu sayfa ödeme sonrası verilen link ile açılır.</div></div></div></div>`;
+function enforceRules(){
+  if(state.plan === 'premium'){
+    state.addons.music = true;
+    state.addons.lock = true;
+    state.addons.theme = true;
+    state.addons.animations = true;
+    state.addons.video = true;
+    state.addons.photoPack = null;
+
+    const m=q('#ad_music'), l=q('#ad_lock');
+    if(m){ m.checked=true; m.disabled=true; }
+    if(l){ l.checked=true; l.disabled=true; }
+
+    q('#addonsDynamic').innerHTML = `<div class="notice">Premium pakette müzik, kilit, tema, animasyon ve video <b>dahil</b>. Premium şablonlar (p1/p2/p3) kullanılır.</div>`;
+  }else{
+    const m=q('#ad_music'), l=q('#ad_lock');
+    if(m){ m.disabled=false; }
+    if(l){ l.disabled=false; }
+  }
+
+  if(state.plan === 'starter'){
+    state.templateId = 's1';
+  }
+}
+
+function readState(){
+  state.plan = q('input[name="plan"]:checked')?.value || 'standard';
+  state.templateId = q('input[name="template"]:checked')?.value || (state.plan==='starter'?'s1':'t1');
+
+  state.addons.music = q('#ad_music')?.checked || false;
+  state.addons.lock  = q('#ad_lock')?.checked || false;
+  state.addons.theme = q('#ad_theme') ? q('#ad_theme').checked : false;
+
+  state.addons.photoPack = null;
+  if(q('#ad_to10')?.checked) state.addons.photoPack='to10';
+  if(q('#ad_to25')?.checked) state.addons.photoPack='to25';
+
+  state.addons.animations = q('#ad_anim')?.checked || false;
+  state.addons.video = q('#ad_video')?.checked || false;
+
+  enforceRules();
+}
+
+function renderAddonsByPlan(){
+  const plan = q('input[name="plan"]:checked')?.value || 'standard';
+
+  if(plan==='premium'){
+    q('#addonsDynamic').innerHTML = `<div class="notice">Premium pakette müzik, kilit, tema, animasyon ve video <b>dahil</b>.</div>`;
     return;
   }
 
-  let site=null;
-  try{ site=await getJSON(`/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`); }catch{}
-
-  q('#slugText').textContent=slug;
-  q('#previewLink').href=`/${slug}?token=${encodeURIComponent(token)}`;
-  q('#previewLink').textContent=`Önizleme: /${slug}?token=...`;
-
-  if(site?.content){
-    q('#names1').value = site.content.names1 || q('#names1').value;
-    q('#names2').value = site.content.names2 || q('#names2').value;
-    q('#date').value   = site.content.date || q('#date').value;
-    q('#story').value  = site.content.story || '';
-    q('#outro').value  = site.content.outro || '';
+  let html='';
+  if(plan==='starter'){
+    html+=`
+      <label class="check"><input id="ad_theme" type="checkbox"/><div><b>🎨 Tema paketi</b> <span class="muted">(149 TL)</span><div class="small muted">Renk/gradient seçenekleri açılır.</div></div></label>
+      <label class="check"><input id="ad_to10" type="checkbox"/><div><b>📸 Fotoğraf paketi: 3 → 10</b> <span class="muted">(269 TL)</span><div class="small muted">Giriş paketini 10 foto seviyesine yükseltir.</div></div></label>`;
+  }
+  if(plan==='standard'){
+    html+=`
+      <label class="check"><input id="ad_to25" type="checkbox"/><div><b>📸 Fotoğraf paketi: 10 → 25</b> <span class="muted">(399 TL)</span><div class="small muted">Standart paketini Premium foto seviyesine yükseltir.</div></div></label>
+      <label class="check"><input id="ad_video" type="checkbox"/><div><b>🎬 Video bloğu</b> <span class="muted">(299 TL)</span><div class="small muted">Sayfaya video alanı ekler.</div></div></label>
+      <label class="check"><input id="ad_anim" type="checkbox"/><div><b>✨ Premium animasyon paketi</b> <span class="muted">(199 TL)</span><div class="small muted">Daha premium geçişler ve efektler.</div></div></label>`;
   }
 
-  const allowMusic = site ? (site.plan==='premium' || site.addons?.music===true) : true;
-  const allowLock  = site ? (site.plan==='premium' || site.addons?.lock===true) : true;
-
-  if(site?.photoLimit){
-    const note=document.createElement('div');
-    note.className='small muted';
-    note.style.marginTop='6px';
-    note.textContent=`Foto limitin: ${site.photoLimit}`;
-    const photoBox=q('#photoBox');
-    photoBox.insertBefore(note, photoBox.querySelector('input'));
-  }
-
-  if(!allowMusic){
-    const box=q('#musicBox');
-    box.style.opacity='0.6';
-    box.innerHTML=`<div style="font-weight:800">🎵 Müzik Yükle</div><div class="small muted" style="margin-top:6px">Bu paket için müzik eklentisi alınmamış.</div>`;
-  }
-  if(!allowLock){
-    const box=q('#lockBox');
-    box.style.opacity='0.6';
-    box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
-  }
-
-  let highlights = (site?.content?.highlights || []).map(x=>({title:x.title||'', text:x.text||''}));
-  let chapters   = (site?.content?.chapters || []).map(x=>({title:x.title||'', text:x.text||'', photoUrl:x.photoUrl||''}));
-  let timeline   = (site?.content?.timeline || []).map(x=>({title:x.title||'', date:x.date||'', text:x.text||'', photoUrl:x.photoUrl||''}));
-  let videoUrl   = site?.content?.videoUrl || '';
-
-  const advBox = q('#advancedBox');
-  const fields = q('#premiumFields');
-
-  const isPremium = site?.plan === 'premium';
-  const canVideo = isPremium || (site?.addons?.video===true);
-  const showTimeline = isPremium || (site?.templateId==='t3');
-
-  if(isPremium || canVideo || showTimeline){
-    advBox.style.display='block';
-    fields.innerHTML='';
-
-    if(isPremium){
-      const hDiv=document.createElement('div'); fields.appendChild(hDiv);
-      renderRepeater(hDiv, highlights, [
-        {k:'title', label:'Başlık', type:'text'},
-        {k:'text', label:'Metin', type:'textarea'}
-      ], 'Öne Çıkan Anlar');
-
-      const cDiv=document.createElement('div'); fields.appendChild(cDiv);
-      renderRepeater(cDiv, chapters, [
-        {k:'title', label:'Başlık', type:'text'},
-        {k:'text', label:'Metin', type:'textarea'},
-        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
-      ], 'Chapters (Cinematic)');
-
-      const vBox=document.createElement('div');
-      vBox.className='tcard'; vBox.style.borderRadius='18px';
-      vBox.innerHTML=`
-        <b>🎬 Video URL</b>
-        <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
-        <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
-      `;
-      fields.appendChild(vBox);
-
-      const tDiv=document.createElement('div'); fields.appendChild(tDiv);
-      renderRepeater(tDiv, timeline, [
-        {k:'title', label:'Başlık', type:'text'},
-        {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
-        {k:'text', label:'Metin', type:'textarea'},
-        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
-      ], 'Timeline (Deluxe)');
-    } else {
-      if(canVideo){
-        const vBox=document.createElement('div');
-        vBox.className='tcard'; vBox.style.borderRadius='18px';
-        vBox.innerHTML=`
-          <b>🎬 Video URL (Eklenti)</b>
-          <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
-          <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
-        `;
-        fields.appendChild(vBox);
-      }
-      if(showTimeline){
-        const tDiv=document.createElement('div'); fields.appendChild(tDiv);
-        renderRepeater(tDiv, timeline, [
-          {k:'title', label:'Başlık', type:'text'},
-          {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
-          {k:'text', label:'Metin', type:'textarea'}
-        ], 'Timeline');
-      }
-    }
-  }
-
-  q('#saveBtn').addEventListener('click', async ()=>{
-    try{
-      const payload = {
-        slug, token,
-        content:{
-          names1:q('#names1')?.value||'',
-          names2:q('#names2')?.value||'',
-          date:q('#date')?.value||'',
-          story:q('#story')?.value||'',
-          outro:q('#outro')?.value||'',
-          highlights,
-          chapters,
-          videoUrl: q('#videoUrl') ? q('#videoUrl').value : (videoUrl||''),
-          timeline
-        },
-        lockPin: allowLock ? (q('#lockpin')?.value||null) : null
-      };
-      await postJSON('/api/builder-save', payload);
-      alert('Kaydedildi ✅');
-    }catch(e){ alert(e.message||'Kaydetme hatası'); }
-  });
-
-  q('#publishBtn').addEventListener('click', async ()=>{
-    try{
-      await postJSON('/api/builder-publish',{slug,token});
-      alert('Yayınlandı ✅');
-      window.location.href=`/${slug}`;
-    }catch(e){ alert(e.message||'Yayınlama hatası'); }
-  });
-
-  q('#photoInput').addEventListener('change', async (e)=>{
-    const f=e.target.files?.[0]; e.target.value='';
-    if(!f) return;
-    try{
-      const url=await uploadRaw(f,'photo',slug,token);
-      const img=document.createElement('img'); img.src=url;
-      q('#photoGrid').appendChild(img);
-    }catch(err){ alert(err.message||'Foto upload hata'); }
-  });
-
-  q('#musicInput')?.addEventListener('change', async (e)=>{
-    const f=e.target.files?.[0]; e.target.value='';
-    if(!f) return;
-    if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');
-    try{
-      await uploadRaw(f,'music',slug,token);
-      q('#musicStatus').textContent='Müzik yüklendi ✅';
-      q('#musicStatus').className='ok';
-    }catch(err){ alert(err.message||'Müzik upload hata'); }
-  });
+  q('#addonsDynamic').innerHTML = html;
+  document.querySelectorAll('input').forEach(el=>el.addEventListener('change',recalc));
 }
 
-document.addEventListener('DOMContentLoaded', main);
+function recalc(){
+  readState();
+  const total = computeTotal(state.plan, state.addons);
+  q('#total').textContent = total + ' TL';
+
+  const sug = upgradeSuggestion(state.plan, state.addons);
+  const box = q('#suggestion');
+  if(sug){
+    box.style.display='block';
+    box.querySelector('b').textContent = sug.to.toUpperCase() + ' paket daha mantıklı';
+    box.querySelector('.small').textContent = sug.reason;
+  }else{
+    box.style.display='none';
+  }
+}
+
+async function checkSlug(){
+  const slug = normalizeSlug(q('#slug').value);
+  q('#slugPreview').textContent='askimiz.com/'+(slug||'...');
+  if(!isValidSlug(slug)){
+    q('#slugMsg').innerHTML='<span class="err">Slug geçersiz. Örn: batikan.sezin</span>';
+    return;
+  }
+  const res=await postJSON('/api/slug-check',{slug});
+  q('#slugMsg').innerHTML = res.available ? '<span class="ok">Bu URL boşta ✅</span>' : `<span class="err">Bu URL dolu ❌ Öneri: <span class="kbd">${res.suggestion||''}</span></span>`;
+}
+
+async function checkout(){
+  readState();
+  const slug=normalizeSlug(q('#slug').value);
+  if(!isValidSlug(slug)) return alert('Slug geçersiz. Örn: batikan.sezin');
+
+  const res = await postJSON('/api/checkout', {
+    slug,
+    plan: state.plan,
+    templateId: state.templateId,
+    addons: state.addons
+  });
+  if(res.builderUrl){ window.location.href = res.builderUrl; return; }
+  alert('Canlı ödeme entegrasyonu bağlanınca checkoutUrl dönecek. OrderId: '+res.orderId);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sp = new URLSearchParams(window.location.search);
+  const qp = sp.get('plan');
+  if(qp && ['starter','standard','premium'].includes(qp)){
+    const el = document.querySelector(`input[name="plan"][value="${qp}"]`);
+    if(el) el.checked = true;
+  }else{
+    q('input[value="standard"][name="plan"]').checked=true;
+  }
+
+  renderTemplateOptions();
+  renderAddonsByPlan();
+  recalc();
+
+  q('#btnSlug').addEventListener('click', checkSlug);
+  q('#btnPay').addEventListener('click', checkout);
+
+  document.querySelectorAll('input[name="plan"]').forEach(r=>r.addEventListener('change', ()=>{
+    renderTemplateOptions();
+    renderAddonsByPlan();
+    recalc();
+  }));
+
+  q('#ad_music').addEventListener('change', recalc);
+  q('#ad_lock').addEventListener('change', recalc);
+});

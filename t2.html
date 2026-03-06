@@ -1,122 +1,240 @@
-export function initReveal(){
-  const els = Array.from(document.querySelectorAll('.reveal'));
-  if(!els.length) return;
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{
-      if(e.isIntersecting){
-        e.target.classList.add('is-visible');
-        io.unobserve(e.target);
+import { pathSlug, qs } from './slug-util.js';
+import { postJSON, getJSON } from './api.js';
+
+const q=(s)=>document.querySelector(s);
+
+async function uploadRaw(file,type,slug,token){
+  const url=`/api/upload?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&filename=${encodeURIComponent(file.name)}`;
+  const r=await fetch(url,{method:'PUT',headers:{'content-type':file.type||'application/octet-stream'},body:file});
+  const j=await r.json().catch(()=> ({}));
+  if(!r.ok) throw new Error(j.error||'Upload hatası');
+  return j.url;
+}
+
+function renderRepeater(holder, items, schema, title){
+  holder.innerHTML = `
+    <div class="tcard" style="border-radius:18px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <b>${title}</b>
+        <button class="btn" type="button" data-add>+ Ekle</button>
+      </div>
+      <div data-list style="margin-top:10px; display:grid; gap:10px"></div>
+    </div>
+  `;
+  const list = holder.querySelector('[data-list]');
+  const addBtn = holder.querySelector('[data-add]');
+
+  function rowHtml(it, idx){
+    const fields = schema.map(s=>{
+      const v = it[s.k] || '';
+      if(s.type === 'textarea'){
+        return `<div><div class="small muted">${s.label}</div><textarea class="input" data-idx="${idx}" data-k="${s.k}">${v}</textarea></div>`;
       }
-    });
-  }, { threshold: 0.12 });
-  els.forEach(el=>io.observe(el));
-}
-
-export function initLightbox(){
-  const items = Array.from(document.querySelectorAll('[data-lightbox="gallery"]'));
-  if(!items.length) return;
-
-  const urls = items.map(el => el.getAttribute('data-src') || el.getAttribute('src') || '');
-  let idx = 0;
-  let overlay = null;
-
-  function close(){
-    overlay?.remove();
-    overlay = null;
-    document.removeEventListener('keydown', onKey);
-  }
-  function show(i){
-    idx = (i + urls.length) % urls.length;
-    if(!overlay){
-      overlay = document.createElement('div');
-      overlay.className = 'lb-backdrop';
-      overlay.innerHTML = `
-        <div class="lb-modal">
-          <div class="lb-top">
-            <div class="lb-title">Premium Galeri</div>
-            <div class="lb-actions">
-              <button class="lb-btn" data-act="prev">◀</button>
-              <button class="lb-btn" data-act="next">▶</button>
-              <button class="lb-btn" data-act="close">✕</button>
-            </div>
-          </div>
-          <div class="lb-img"><img alt="Foto"/></div>
+      return `<div><div class="small muted">${s.label}</div><input class="input" value="${v}" data-idx="${idx}" data-k="${s.k}" /></div>`;
+    }).join('');
+    return `
+      <div class="tcard" style="border-radius:18px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+          <b>#${idx+1}</b>
+          <button class="btn" type="button" data-del="${idx}">Sil</button>
         </div>
-      `;
-      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) close(); });
-      overlay.querySelector('[data-act="close"]').addEventListener('click', close);
-      overlay.querySelector('[data-act="prev"]').addEventListener('click', ()=>show(idx-1));
-      overlay.querySelector('[data-act="next"]').addEventListener('click', ()=>show(idx+1));
+        <div style="margin-top:10px; display:grid; gap:10px">${fields}</div>
+      </div>
+    `;
+  }
 
-      let sx = 0, sy = 0;
-      overlay.addEventListener('touchstart', (e)=>{ sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive:true });
-      overlay.addEventListener('touchend', (e)=>{
-        const ex = e.changedTouches[0].clientX;
-        const ey = e.changedTouches[0].clientY;
-        const dx = ex - sx, dy = ey - sy;
-        if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)){
-          if(dx < 0) show(idx+1); else show(idx-1);
-        }
+  function render(){
+    list.innerHTML = items.map((it, idx)=>rowHtml(it, idx)).join('') || `<div class="muted small">Henüz ek yok.</div>`;
+    list.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const i = Number(btn.getAttribute('data-del'));
+        items.splice(i,1);
+        render();
       });
+    });
+    list.querySelectorAll('input[data-idx], textarea[data-idx]').forEach(el=>{
+      el.addEventListener('input', ()=>{
+        const i = Number(el.getAttribute('data-idx'));
+        const k = el.getAttribute('data-k');
+        items[i][k] = el.value;
+      });
+    });
+  }
 
-      document.body.appendChild(overlay);
-      document.addEventListener('keydown', onKey);
+  addBtn.addEventListener('click', ()=>{
+    const obj = {};
+    schema.forEach(s=>obj[s.k]='');
+    items.push(obj);
+    render();
+  });
+
+  render();
+}
+
+async function main(){
+  const slug=pathSlug();
+  const token=qs('token')||'';
+  if(!token){
+    q('#root').innerHTML=`<div class="container"><div class="card"><div class="p"><div class="h2">Builder</div><div class="err" style="margin-top:8px">Token yok. Bu sayfa ödeme sonrası verilen link ile açılır.</div></div></div></div>`;
+    return;
+  }
+
+  let site=null;
+  try{ site=await getJSON(`/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`); }catch{}
+
+  q('#slugText').textContent=slug;
+  q('#previewLink').href=`/${slug}?token=${encodeURIComponent(token)}`;
+  q('#previewLink').textContent=`Önizleme: /${slug}?token=...`;
+
+  if(site?.content){
+    q('#names1').value = site.content.names1 || q('#names1').value;
+    q('#names2').value = site.content.names2 || q('#names2').value;
+    q('#date').value   = site.content.date || q('#date').value;
+    q('#story').value  = site.content.story || '';
+    q('#outro').value  = site.content.outro || '';
+  }
+
+  const allowMusic = site ? (site.plan==='premium' || site.addons?.music===true) : true;
+  const allowLock  = site ? (site.plan==='premium' || site.addons?.lock===true) : true;
+
+  if(site?.photoLimit){
+    const note=document.createElement('div');
+    note.className='small muted';
+    note.style.marginTop='6px';
+    note.textContent=`Foto limitin: ${site.photoLimit}`;
+    const photoBox=q('#photoBox');
+    photoBox.insertBefore(note, photoBox.querySelector('input'));
+  }
+
+  if(!allowMusic){
+    const box=q('#musicBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🎵 Müzik Yükle</div><div class="small muted" style="margin-top:6px">Bu paket için müzik eklentisi alınmamış.</div>`;
+  }
+  if(!allowLock){
+    const box=q('#lockBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
+  }
+
+  let highlights = (site?.content?.highlights || []).map(x=>({title:x.title||'', text:x.text||''}));
+  let chapters   = (site?.content?.chapters || []).map(x=>({title:x.title||'', text:x.text||'', photoUrl:x.photoUrl||''}));
+  let timeline   = (site?.content?.timeline || []).map(x=>({title:x.title||'', date:x.date||'', text:x.text||'', photoUrl:x.photoUrl||''}));
+  let videoUrl   = site?.content?.videoUrl || '';
+
+  const advBox = q('#advancedBox');
+  const fields = q('#premiumFields');
+
+  const isPremium = site?.plan === 'premium';
+  const canVideo = isPremium || (site?.addons?.video===true);
+  const showTimeline = isPremium || (site?.templateId==='t3');
+
+  if(isPremium || canVideo || showTimeline){
+    advBox.style.display='block';
+    fields.innerHTML='';
+
+    if(isPremium){
+      const hDiv=document.createElement('div'); fields.appendChild(hDiv);
+      renderRepeater(hDiv, highlights, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'}
+      ], 'Öne Çıkan Anlar');
+
+      const cDiv=document.createElement('div'); fields.appendChild(cDiv);
+      renderRepeater(cDiv, chapters, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'},
+        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
+      ], 'Chapters (Cinematic)');
+
+      const vBox=document.createElement('div');
+      vBox.className='tcard'; vBox.style.borderRadius='18px';
+      vBox.innerHTML=`
+        <b>🎬 Video URL</b>
+        <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
+        <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
+      `;
+      fields.appendChild(vBox);
+
+      const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+      renderRepeater(tDiv, timeline, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'},
+        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
+      ], 'Timeline (Deluxe)');
+    } else {
+      if(canVideo){
+        const vBox=document.createElement('div');
+        vBox.className='tcard'; vBox.style.borderRadius='18px';
+        vBox.innerHTML=`
+          <b>🎬 Video URL (Eklenti)</b>
+          <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
+          <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
+        `;
+        fields.appendChild(vBox);
+      }
+      if(showTimeline){
+        const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+        renderRepeater(tDiv, timeline, [
+          {k:'title', label:'Başlık', type:'text'},
+          {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
+          {k:'text', label:'Metin', type:'textarea'}
+        ], 'Timeline');
+      }
     }
-    overlay.querySelector('img').src = urls[idx];
   }
 
-  function onKey(e){
-    if(!overlay) return;
-    if(e.key === 'Escape') close();
-    if(e.key === 'ArrowRight') show(idx+1);
-    if(e.key === 'ArrowLeft') show(idx-1);
-  }
+  q('#saveBtn').addEventListener('click', async ()=>{
+    try{
+      const payload = {
+        slug, token,
+        content:{
+          names1:q('#names1')?.value||'',
+          names2:q('#names2')?.value||'',
+          date:q('#date')?.value||'',
+          story:q('#story')?.value||'',
+          outro:q('#outro')?.value||'',
+          highlights,
+          chapters,
+          videoUrl: q('#videoUrl') ? q('#videoUrl').value : (videoUrl||''),
+          timeline
+        },
+        lockPin: allowLock ? (q('#lockpin')?.value||null) : null
+      };
+      await postJSON('/api/builder-save', payload);
+      alert('Kaydedildi ✅');
+    }catch(e){ alert(e.message||'Kaydetme hatası'); }
+  });
 
-  items.forEach((el, i)=> el.addEventListener('click', ()=>show(i)));
+  q('#publishBtn').addEventListener('click', async ()=>{
+    try{
+      await postJSON('/api/builder-publish',{slug,token});
+      alert('Yayınlandı ✅');
+      window.location.href=`/${slug}`;
+    }catch(e){ alert(e.message||'Yayınlama hatası'); }
+  });
+
+  q('#photoInput').addEventListener('change', async (e)=>{
+    const f=e.target.files?.[0]; e.target.value='';
+    if(!f) return;
+    try{
+      const url=await uploadRaw(f,'photo',slug,token);
+      const img=document.createElement('img'); img.src=url;
+      q('#photoGrid').appendChild(img);
+    }catch(err){ alert(err.message||'Foto upload hata'); }
+  });
+
+  q('#musicInput')?.addEventListener('change', async (e)=>{
+    const f=e.target.files?.[0]; e.target.value='';
+    if(!f) return;
+    if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');
+    try{
+      await uploadRaw(f,'music',slug,token);
+      q('#musicStatus').textContent='Müzik yüklendi ✅';
+      q('#musicStatus').className='ok';
+    }catch(err){ alert(err.message||'Müzik upload hata'); }
+  });
 }
 
-function pad2(n){ return String(n).padStart(2,'0'); }
-
-/**
- * Live "together since" counter.
- * Uses content.date (YYYY-MM-DD) as start date.
- */
-export function initLiveTogetherCounter(isoDate){
-  const dEl = document.getElementById('daysCounter');
-  const hEl = document.getElementById('hoursCounter');
-  const mEl = document.getElementById('minutesCounter');
-  const sEl = document.getElementById('secondsCounter');
-  if(!dEl && !hEl && !mEl && !sEl) return;
-  if(!isoDate) return;
-
-  const start = new Date(isoDate);
-  if(Number.isNaN(start.getTime())) return;
-
-  function tick(){
-    const now = new Date();
-    let diffMs = now.getTime() - start.getTime();
-    if(diffMs < 0) diffMs = 0;
-
-    const totalSec = Math.floor(diffMs / 1000);
-    const days = Math.floor(totalSec / 86400);
-    const rem1 = totalSec - days*86400;
-    const hours = Math.floor(rem1 / 3600);
-    const rem2 = rem1 - hours*3600;
-    const minutes = Math.floor(rem2 / 60);
-    const seconds = rem2 - minutes*60;
-
-    if(dEl) dEl.textContent = String(days);
-    if(hEl) hEl.textContent = pad2(hours);
-    if(mEl) mEl.textContent = pad2(minutes);
-    if(sEl) sEl.textContent = pad2(seconds);
-  }
-
-  tick();
-  return setInterval(tick, 1000);
-}
-
-export function initPremiumEffects(site){
-  initReveal();
-  initLightbox();
-  if(site?.content?.date) initLiveTogetherCounter(site.content.date);
-}
+document.addEventListener('DOMContentLoaded', main);

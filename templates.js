@@ -1,24 +1,19 @@
-export const PLAN_PRICE={starter:999,standard:1499,premium:1999};
-export const ADDON_PRICE={music:99,lock:49,theme:149,photoPack_to10:269,photoPack_to25:399,animations:199,video:299};
-
-export function computeTotal(plan,addons){
-  // Premium pakette tüm opsiyonlar dahildir.
-  if(plan==='premium') return PLAN_PRICE.premium;
-
-  let total=PLAN_PRICE[plan]||0;
-  if(addons.music) total+=ADDON_PRICE.music;
-  if(addons.lock) total+=ADDON_PRICE.lock;
-  if(plan==='starter' && addons.theme) total+=ADDON_PRICE.theme;
-  if(addons.photoPack==='to10') total+=ADDON_PRICE.photoPack_to10;
-  if(addons.photoPack==='to25') total+=ADDON_PRICE.photoPack_to25;
-  if(addons.animations) total+=ADDON_PRICE.animations;
-  if(plan!=='premium' && addons.video) total+=ADDON_PRICE.video;
-  return total;
+const map = { "ş":"s","Ş":"s","ı":"i","I":"i","İ":"i","ğ":"g","Ğ":"g","ü":"u","Ü":"u","ö":"o","Ö":"o","ç":"c","Ç":"c" };
+export function normalizeSlug(raw){
+  const trimmed=(raw||'').trim();
+  const tr=[...trimmed].map(ch=>map[ch]??ch).join('');
+  let s=tr.toLowerCase().replace(/[^a-z0-9.-]+/g,'-');
+  s=s.replace(/-+/g,'-').replace(/^\-+|\-+$/g,'');
+  s=s.replace(/\.+/g,'.').replace(/^\.+|\.+$/g,'');
+  return s.slice(0,48);
 }
-
-export function upgradeSuggestion(plan,addons){
-  const total=computeTotal(plan,addons);
-  if(plan==='starter' && total>=PLAN_PRICE.standard) return {to:'standard',reason:'Eklerle birlikte Standart paket daha avantajlı.'};
-  if(plan==='standard' && total>=PLAN_PRICE.premium) return {to:'premium',reason:'Eklerle birlikte Premium paket daha avantajlı.'};
-  return null;
+export function isValidSlug(slug){
+  return /^[a-z0-9]+([.-][a-z0-9]+)*$/.test(slug) && slug.length>=3 && slug.length<=48;
 }
+export function pathSlug(){
+  const p=window.location.pathname.replace(/^\/+|\/+$/g,'');
+  const parts=p.split('/');
+  if(parts[0]==='builder') return parts[1]||'';
+  return parts[0]||'';
+}
+export function qs(name){ return new URLSearchParams(window.location.search).get(name); }
