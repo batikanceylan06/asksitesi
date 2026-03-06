@@ -1,189 +1,122 @@
-import { normalizeSlug, isValidSlug } from './slug-util.js';
-import { postJSON } from './api.js';
-import { computeTotal, upgradeSuggestion } from './pricing.js';
+export function initReveal(){
+  const els = Array.from(document.querySelectorAll('.reveal'));
+  if(!els.length) return;
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        e.target.classList.add('is-visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  els.forEach(el=>io.observe(el));
+}
 
-const state = {
-  plan: 'standard',
-  templateId: 't1',
-  addons: { music:false, lock:false, theme:false, photoPack:null, animations:false, video:false }
-};
-const q=(s)=>document.querySelector(s);
+export function initLightbox(){
+  const items = Array.from(document.querySelectorAll('[data-lightbox="gallery"]'));
+  if(!items.length) return;
 
-const TEMPLATE_SETS = {
-  starter: [
-    { id:'s1', name:'Starter (Sabit)', desc:'Tek şablon — sade' }
-  ],
-  standard: [
-    { id:'t1', name:'Romantic Classic', desc:'Klasik romantik' },
-    { id:'t2', name:'Minimal Love', desc:'Modern sade' },
-    { id:'t3', name:'Memory Timeline', desc:'Timeline (standart)' }
-  ],
-  premium: [
-    { id:'p1', name:'Royal Glow', desc:'Glass + glow + premium galeri' },
-    { id:'p2', name:'Cinematic Story', desc:'Film vibe + chapter + video' },
-    { id:'p3', name:'Infinity Timeline Deluxe', desc:'Deluxe timeline + sayaç' }
-  ]
-};
+  const urls = items.map(el => el.getAttribute('data-src') || el.getAttribute('src') || '');
+  let idx = 0;
+  let overlay = null;
 
-function renderTemplateOptions(){
-  const plan = q('input[name="plan"]:checked')?.value || 'standard';
-  const list = TEMPLATE_SETS[plan];
-  const holder = q('#templateOptions');
-
-  holder.innerHTML = list.map(t=>`
-    <label class="radio">
-      <input type="radio" name="template" value="${t.id}"/>
-      <div style="flex:1">
-        <div style="display:flex;justify-content:space-between;gap:12px">
-          <b>${t.name}</b>
-          <span class="kbd">${t.id}</span>
+  function close(){
+    overlay?.remove();
+    overlay = null;
+    document.removeEventListener('keydown', onKey);
+  }
+  function show(i){
+    idx = (i + urls.length) % urls.length;
+    if(!overlay){
+      overlay = document.createElement('div');
+      overlay.className = 'lb-backdrop';
+      overlay.innerHTML = `
+        <div class="lb-modal">
+          <div class="lb-top">
+            <div class="lb-title">Premium Galeri</div>
+            <div class="lb-actions">
+              <button class="lb-btn" data-act="prev">◀</button>
+              <button class="lb-btn" data-act="next">▶</button>
+              <button class="lb-btn" data-act="close">✕</button>
+            </div>
+          </div>
+          <div class="lb-img"><img alt="Foto"/></div>
         </div>
-        <div class="small muted" style="margin-top:4px">${t.desc}</div>
-      </div>
-    </label>
-  `).join('');
+      `;
+      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) close(); });
+      overlay.querySelector('[data-act="close"]').addEventListener('click', close);
+      overlay.querySelector('[data-act="prev"]').addEventListener('click', ()=>show(idx-1));
+      overlay.querySelector('[data-act="next"]').addEventListener('click', ()=>show(idx+1));
 
-  const first = holder.querySelector('input[name="template"]');
-  if(first) first.checked = true;
+      let sx = 0, sy = 0;
+      overlay.addEventListener('touchstart', (e)=>{ sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive:true });
+      overlay.addEventListener('touchend', (e)=>{
+        const ex = e.changedTouches[0].clientX;
+        const ey = e.changedTouches[0].clientY;
+        const dx = ex - sx, dy = ey - sy;
+        if(Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)){
+          if(dx < 0) show(idx+1); else show(idx-1);
+        }
+      });
 
-  q('#tplNote').style.display = (plan === 'starter') ? 'block' : 'none';
+      document.body.appendChild(overlay);
+      document.addEventListener('keydown', onKey);
+    }
+    overlay.querySelector('img').src = urls[idx];
+  }
 
-  document.querySelectorAll('input[name="template"]').forEach(r=>r.addEventListener('change', recalc));
+  function onKey(e){
+    if(!overlay) return;
+    if(e.key === 'Escape') close();
+    if(e.key === 'ArrowRight') show(idx+1);
+    if(e.key === 'ArrowLeft') show(idx-1);
+  }
+
+  items.forEach((el, i)=> el.addEventListener('click', ()=>show(i)));
 }
 
-function enforceRules(){
-  if(state.plan === 'premium'){
-    state.addons.music = true;
-    state.addons.lock = true;
-    state.addons.theme = true;
-    state.addons.animations = true;
-    state.addons.video = true;
-    state.addons.photoPack = null;
+function pad2(n){ return String(n).padStart(2,'0'); }
 
-    const m=q('#ad_music'), l=q('#ad_lock');
-    if(m){ m.checked=true; m.disabled=true; }
-    if(l){ l.checked=true; l.disabled=true; }
+/**
+ * Live "together since" counter.
+ * Uses content.date (YYYY-MM-DD) as start date.
+ */
+export function initLiveTogetherCounter(isoDate){
+  const dEl = document.getElementById('daysCounter');
+  const hEl = document.getElementById('hoursCounter');
+  const mEl = document.getElementById('minutesCounter');
+  const sEl = document.getElementById('secondsCounter');
+  if(!dEl && !hEl && !mEl && !sEl) return;
+  if(!isoDate) return;
 
-    q('#addonsDynamic').innerHTML = `<div class="notice">Premium pakette müzik, kilit, tema, animasyon ve video <b>dahil</b>. Premium şablonlar (p1/p2/p3) kullanılır.</div>`;
-  }else{
-    const m=q('#ad_music'), l=q('#ad_lock');
-    if(m){ m.disabled=false; }
-    if(l){ l.disabled=false; }
+  const start = new Date(isoDate);
+  if(Number.isNaN(start.getTime())) return;
+
+  function tick(){
+    const now = new Date();
+    let diffMs = now.getTime() - start.getTime();
+    if(diffMs < 0) diffMs = 0;
+
+    const totalSec = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const rem1 = totalSec - days*86400;
+    const hours = Math.floor(rem1 / 3600);
+    const rem2 = rem1 - hours*3600;
+    const minutes = Math.floor(rem2 / 60);
+    const seconds = rem2 - minutes*60;
+
+    if(dEl) dEl.textContent = String(days);
+    if(hEl) hEl.textContent = pad2(hours);
+    if(mEl) mEl.textContent = pad2(minutes);
+    if(sEl) sEl.textContent = pad2(seconds);
   }
 
-  if(state.plan === 'starter'){
-    state.templateId = 's1';
-  }
+  tick();
+  return setInterval(tick, 1000);
 }
 
-function readState(){
-  state.plan = q('input[name="plan"]:checked')?.value || 'standard';
-  state.templateId = q('input[name="template"]:checked')?.value || (state.plan==='starter'?'s1':'t1');
-
-  state.addons.music = q('#ad_music')?.checked || false;
-  state.addons.lock  = q('#ad_lock')?.checked || false;
-  state.addons.theme = q('#ad_theme') ? q('#ad_theme').checked : false;
-
-  state.addons.photoPack = null;
-  if(q('#ad_to10')?.checked) state.addons.photoPack='to10';
-  if(q('#ad_to25')?.checked) state.addons.photoPack='to25';
-
-  state.addons.animations = q('#ad_anim')?.checked || false;
-  state.addons.video = q('#ad_video')?.checked || false;
-
-  enforceRules();
+export function initPremiumEffects(site){
+  initReveal();
+  initLightbox();
+  if(site?.content?.date) initLiveTogetherCounter(site.content.date);
 }
-
-function renderAddonsByPlan(){
-  const plan = q('input[name="plan"]:checked')?.value || 'standard';
-
-  if(plan==='premium'){
-    q('#addonsDynamic').innerHTML = `<div class="notice">Premium pakette müzik, kilit, tema, animasyon ve video <b>dahil</b>.</div>`;
-    return;
-  }
-
-  let html='';
-  if(plan==='starter'){
-    html+=`
-      <label class="check"><input id="ad_theme" type="checkbox"/><div><b>🎨 Tema paketi</b> <span class="muted">(149 TL)</span><div class="small muted">Renk/gradient seçenekleri açılır.</div></div></label>
-      <label class="check"><input id="ad_to10" type="checkbox"/><div><b>📸 Fotoğraf paketi: 3 → 10</b> <span class="muted">(269 TL)</span><div class="small muted">Giriş paketini 10 foto seviyesine yükseltir.</div></div></label>`;
-  }
-  if(plan==='standard'){
-    html+=`
-      <label class="check"><input id="ad_to25" type="checkbox"/><div><b>📸 Fotoğraf paketi: 10 → 25</b> <span class="muted">(399 TL)</span><div class="small muted">Standart paketini Premium foto seviyesine yükseltir.</div></div></label>
-      <label class="check"><input id="ad_video" type="checkbox"/><div><b>🎬 Video bloğu</b> <span class="muted">(299 TL)</span><div class="small muted">Sayfaya video alanı ekler.</div></div></label>
-      <label class="check"><input id="ad_anim" type="checkbox"/><div><b>✨ Premium animasyon paketi</b> <span class="muted">(199 TL)</span><div class="small muted">Daha premium geçişler ve efektler.</div></div></label>`;
-  }
-
-  q('#addonsDynamic').innerHTML = html;
-  document.querySelectorAll('input').forEach(el=>el.addEventListener('change',recalc));
-}
-
-function recalc(){
-  readState();
-  const total = computeTotal(state.plan, state.addons);
-  q('#total').textContent = total + ' TL';
-
-  const sug = upgradeSuggestion(state.plan, state.addons);
-  const box = q('#suggestion');
-  if(sug){
-    box.style.display='block';
-    box.querySelector('b').textContent = sug.to.toUpperCase() + ' paket daha mantıklı';
-    box.querySelector('.small').textContent = sug.reason;
-  }else{
-    box.style.display='none';
-  }
-}
-
-async function checkSlug(){
-  const slug = normalizeSlug(q('#slug').value);
-  q('#slugPreview').textContent='askimiz.com/'+(slug||'...');
-  if(!isValidSlug(slug)){
-    q('#slugMsg').innerHTML='<span class="err">Slug geçersiz. Örn: batikan.sezin</span>';
-    return;
-  }
-  const res=await postJSON('/api/slug-check',{slug});
-  q('#slugMsg').innerHTML = res.available ? '<span class="ok">Bu URL boşta ✅</span>' : `<span class="err">Bu URL dolu ❌ Öneri: <span class="kbd">${res.suggestion||''}</span></span>`;
-}
-
-async function checkout(){
-  readState();
-  const slug=normalizeSlug(q('#slug').value);
-  if(!isValidSlug(slug)) return alert('Slug geçersiz. Örn: batikan.sezin');
-
-  const res = await postJSON('/api/checkout', {
-    slug,
-    plan: state.plan,
-    templateId: state.templateId,
-    addons: state.addons
-  });
-  if(res.builderUrl){ window.location.href = res.builderUrl; return; }
-  alert('Canlı ödeme entegrasyonu bağlanınca checkoutUrl dönecek. OrderId: '+res.orderId);
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  const sp = new URLSearchParams(window.location.search);
-  const qp = sp.get('plan');
-  if(qp && ['starter','standard','premium'].includes(qp)){
-    const el = document.querySelector(`input[name="plan"][value="${qp}"]`);
-    if(el) el.checked = true;
-  }else{
-    q('input[value="standard"][name="plan"]').checked=true;
-  }
-
-  renderTemplateOptions();
-  renderAddonsByPlan();
-  recalc();
-
-  q('#btnSlug').addEventListener('click', checkSlug);
-  q('#btnPay').addEventListener('click', checkout);
-
-  document.querySelectorAll('input[name="plan"]').forEach(r=>r.addEventListener('change', ()=>{
-    renderTemplateOptions();
-    renderAddonsByPlan();
-    recalc();
-  }));
-
-  q('#ad_music').addEventListener('change', recalc);
-  q('#ad_lock').addEventListener('change', recalc);
-});
