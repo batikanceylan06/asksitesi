@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Demo p3 — askimiz.com</title>
+  <title>Demo s1 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
   <link rel="stylesheet" href="/assets/css/template.css"/>
-  <link rel="stylesheet" href="/assets/css/skin-premium.css"/>
+  
 </head>
 <body>
   <div id="root"></div>
@@ -14,8 +14,8 @@
     import { renderTemplate } from '/assets/js/templates.js';
     const site = {
       slug:'demo',
-      plan:'premium',
-      templateId:'p3',
+      plan:'starter',
+      templateId:'s1',
       addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
       photoLimit: 25,
       musicUrl: null,
@@ -43,11 +43,9 @@
           { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
         ]
       },
-      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-p3-${i}/900/900`)
+      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-s1-${i}/900/900`)
     };
-    document.getElementById('root').innerHTML = renderTemplate('p3', site);
-    const mod = await import('/assets/js/effects-premium.js');
-    mod.initPremiumEffects(site);
+    document.getElementById('root').innerHTML = renderTemplate('s1', site);
 
   </script>
 </body>
