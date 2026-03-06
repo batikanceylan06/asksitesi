@@ -109,40 +109,61 @@
   <hr class="sep"/>
 
   <section>
-    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
-      <h2 class="h2">3 Hazır Şablon</h2>
-      <a class="muted" href="/templates">Hepsini gör →</a>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+    <h2 class="h2">Şablonları İncele</h2>
+    <a class="muted" href="/templates">Hepsini gör →</a>
+  </div>
+  <p class="muted" style="margin-top:8px">
+    Paketler arasında fark sadece “özellik” değil — <b>şablon seti ve görsel efekt seviyesi</b> de değişir.
+  </p>
 
-    <div class="grid packs" style="margin-top:12px">
-      <div class="card"><div class="p">
-        <b>Romantic Classic</b>
-        <div class="muted" style="margin-top:8px">Klasik romantik, premium his</div>
-        <div class="row" style="margin-top:12px">
-          <a class="btn" href="/demo/t1">Demo</a>
-          <a class="btn primary" href="/create">Satın Al</a>
-        </div>
-      </div></div>
+  <div class="grid packs" style="margin-top:12px">
+    <div class="card"><div class="p">
+      <div class="badge">Starter (Giriş)</div>
+      <div style="margin-top:10px;font-weight:950;font-size:16px">S1 — Starter</div>
+      <div class="muted" style="margin-top:6px">Sade görünüm, hızlı kurulum.</div>
+      <div class="row" style="margin-top:12px">
+        <a class="btn" href="/demo/s1">Demo</a>
+        <a class="btn primary" href="/create?plan=starter">Paketi Seç</a>
+      </div>
+    </div></div>
 
-      <div class="card"><div class="p">
-        <b>Minimal Love</b>
-        <div class="muted" style="margin-top:8px">Modern, sade, şık</div>
-        <div class="row" style="margin-top:12px">
-          <a class="btn" href="/demo/t2">Demo</a>
-          <a class="btn primary" href="/create">Satın Al</a>
-        </div>
-      </div></div>
+    <div class="card"><div class="p">
+      <div class="badge">Standart</div>
+      <div style="margin-top:10px;font-weight:950;font-size:16px">T1/T2/T3</div>
+      <div class="muted" style="margin-top:6px">Standart şablonlar — temiz ve modern.</div>
+      <div class="row" style="margin-top:12px">
+        <a class="btn" href="/demo/t1">Demo</a>
+        <a class="btn primary" href="/create?plan=standard">Paketi Seç</a>
+      </div>
+    </div></div>
 
-      <div class="card"><div class="p">
-        <b>Memory Timeline</b>
-        <div class="muted" style="margin-top:8px">Anı odaklı timeline</div>
-        <div class="row" style="margin-top:12px">
-          <a class="btn" href="/demo/t3">Demo</a>
-          <a class="btn primary" href="/create">Satın Al</a>
-        </div>
-      </div></div>
-    </div>
-  </section>
+    <div class="card" style="border-color:#111"><div class="p">
+      <div class="badge">Premium</div>
+      <div style="margin-top:10px;font-weight:980;font-size:16px">P1/P2/P3</div>
+      <div class="muted" style="margin-top:6px">Glass + glow + premium lightbox + canlı sayaç.</div>
+      <div class="row" style="margin-top:12px">
+        <a class="btn" href="/demo/p3">Demo</a>
+        <a class="btn primary" href="/create?plan=premium">Premium Al</a>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px">
+    <div class="card"><div class="p">
+      <b>Premium Lightbox</b>
+      <div class="muted" style="margin-top:8px">Fotoğraflar blur arkaplan + swipe ile açılır.</div>
+    </div></div>
+    <div class="card"><div class="p">
+      <b>Canlı Sayaç</b>
+      <div class="muted" style="margin-top:8px">Gün/Saat/Dakika/Saniye gerçek zamanlı güncellenir.</div>
+    </div></div>
+    <div class="card"><div class="p">
+      <b>Film / Timeline Deluxe</b>
+      <div class="muted" style="margin-top:8px">Cinematic chapters + video / deluxe timeline.</div>
+    </div></div>
+  </div>
+</section>
 
   <hr class="sep"/>
 

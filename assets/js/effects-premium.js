@@ -75,18 +75,48 @@ export function initLightbox(){
   items.forEach((el, i)=> el.addEventListener('click', ()=>show(i)));
 }
 
-export function initDaysCounter(isoDate){
-  const el = document.getElementById('daysCounter');
-  if(!el || !isoDate) return;
+function pad2(n){ return String(n).padStart(2,'0'); }
+
+/**
+ * Live "together since" counter.
+ * Uses content.date (YYYY-MM-DD) as start date.
+ */
+export function initLiveTogetherCounter(isoDate){
+  const dEl = document.getElementById('daysCounter');
+  const hEl = document.getElementById('hoursCounter');
+  const mEl = document.getElementById('minutesCounter');
+  const sEl = document.getElementById('secondsCounter');
+  if(!dEl && !hEl && !mEl && !sEl) return;
+  if(!isoDate) return;
+
   const start = new Date(isoDate);
   if(Number.isNaN(start.getTime())) return;
-  const now = new Date();
-  const diff = Math.floor((now - start) / (1000*60*60*24));
-  el.textContent = String(Math.max(diff, 0));
+
+  function tick(){
+    const now = new Date();
+    let diffMs = now.getTime() - start.getTime();
+    if(diffMs < 0) diffMs = 0;
+
+    const totalSec = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const rem1 = totalSec - days*86400;
+    const hours = Math.floor(rem1 / 3600);
+    const rem2 = rem1 - hours*3600;
+    const minutes = Math.floor(rem2 / 60);
+    const seconds = rem2 - minutes*60;
+
+    if(dEl) dEl.textContent = String(days);
+    if(hEl) hEl.textContent = pad2(hours);
+    if(mEl) mEl.textContent = pad2(minutes);
+    if(sEl) sEl.textContent = pad2(seconds);
+  }
+
+  tick();
+  return setInterval(tick, 1000);
 }
 
 export function initPremiumEffects(site){
   initReveal();
   initLightbox();
-  if(site?.content?.date) initDaysCounter(site.content.date);
+  if(site?.content?.date) initLiveTogetherCounter(site.content.date);
 }

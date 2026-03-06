@@ -365,11 +365,14 @@ export function renderP3(site){
             ${hero?`<img src="${esc(hero)}" alt="Hero"/>`:`<div class="muted" style="padding:18px">Hero foto yükleyin</div>`}
           </div>
           <div class="tcard reveal" style="border-radius:26px">
-            <div style="font-weight:950">Birlikte</div>
-            <div style="font-size:40px;font-weight:980;margin-top:8px">
-              <span id="daysCounter">0</span> <span class="muted" style="font-size:14px;font-weight:800">gün</span>
-            </div>
-            <div class="muted" style="margin-top:8px;line-height:1.7">
+            <div style="font-weight:950">Birlikte Geçen Süre</div>
+<div class="counter-grid reveal">
+  <div class="counter-card"><div id="daysCounter" class="n">0</div><div class="l">Gün</div></div>
+  <div class="counter-card"><div id="hoursCounter" class="n">00</div><div class="l">Saat</div></div>
+  <div class="counter-card"><div id="minutesCounter" class="n">00</div><div class="l">Dakika</div></div>
+  <div class="counter-card"><div id="secondsCounter" class="n">00</div><div class="l">Saniye</div></div>
+</div>
+<div class="muted" style="margin-top:10px;line-height:1.7">
               ${esc(site.content.story||'Kısa bir not ekleyebilirsin.')}
             </div>
           </div>
