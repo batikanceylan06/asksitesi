@@ -20,7 +20,8 @@
       </nav>
     </div>
   </header>
-  <div class="container">
+  <main class="page">
+<div class="container">
   <section class="hero">
     <div>
       <h1 class="h1">Sevginizi dijital bir hatıraya dönüştürün.</h1>
@@ -37,6 +38,21 @@
         <span class="badge">⚡ Hızlı yayın</span>
         <span class="badge">🔒 Opsiyonel kilit</span>
       </div>
+
+      <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:16px">
+        <div class="card"><div class="p">
+          <b>1) Paket Seç</b>
+          <div class="muted small" style="margin-top:6px">Giriş / Standart / Premium</div>
+        </div></div>
+        <div class="card"><div class="p">
+          <b>2) İçeriği Yükle</b>
+          <div class="muted small" style="margin-top:6px">Foto + hikaye + tarih</div>
+        </div></div>
+        <div class="card"><div class="p">
+          <b>3) Paylaş</b>
+          <div class="muted small" style="margin-top:6px">askimiz.com/isim.isim</div>
+        </div></div>
+      </div>
     </div>
 
     <div class="mock">
@@ -51,8 +67,109 @@
       </div>
     </div>
   </section>
+
+  <hr class="sep"/>
+
+  <section>
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+      <h2 class="h2">Paketler</h2>
+      <a class="muted" href="/create">Hemen oluştur →</a>
+    </div>
+
+    <div class="grid packs" style="margin-top:12px">
+      <div class="card"><div class="p">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b>Giriş</b><b>999 TL</b>
+        </div>
+        <div class="muted" style="margin-top:8px">Başlangıç: 3 foto + mini hikaye</div>
+        <div class="small muted" style="margin-top:6px">Şablon seçimi yok (t1 sabit)</div>
+        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
+      </div></div>
+
+      <div class="card" style="border-color:#111"><div class="p">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b>Standart ⭐</b><b>1499 TL</b>
+        </div>
+        <div class="muted" style="margin-top:8px">En popüler: şablon seçimi + 10 foto</div>
+        <div class="small muted" style="margin-top:6px">Müzik/kilit gibi eklentiler alınabilir</div>
+        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
+      </div></div>
+
+      <div class="card"><div class="p">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b>Premium 👑</b><b>1999 TL</b>
+        </div>
+        <div class="muted" style="margin-top:8px">Tüm opsiyonlar dahil</div>
+        <div class="small muted" style="margin-top:6px">Müzik + kilit + tema + animasyon + video</div>
+        <a class="btn primary" style="width:100%;margin-top:12px" href="/create">Seç</a>
+      </div></div>
+    </div>
+  </section>
+
+  <hr class="sep"/>
+
+  <section>
+    <div style="display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap">
+      <h2 class="h2">3 Hazır Şablon</h2>
+      <a class="muted" href="/templates">Hepsini gör →</a>
+    </div>
+
+    <div class="grid packs" style="margin-top:12px">
+      <div class="card"><div class="p">
+        <b>Romantic Classic</b>
+        <div class="muted" style="margin-top:8px">Klasik romantik, premium his</div>
+        <div class="row" style="margin-top:12px">
+          <a class="btn" href="/demo/t1">Demo</a>
+          <a class="btn primary" href="/create">Satın Al</a>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="p">
+        <b>Minimal Love</b>
+        <div class="muted" style="margin-top:8px">Modern, sade, şık</div>
+        <div class="row" style="margin-top:12px">
+          <a class="btn" href="/demo/t2">Demo</a>
+          <a class="btn primary" href="/create">Satın Al</a>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="p">
+        <b>Memory Timeline</b>
+        <div class="muted" style="margin-top:8px">Anı odaklı timeline</div>
+        <div class="row" style="margin-top:12px">
+          <a class="btn" href="/demo/t3">Demo</a>
+          <a class="btn primary" href="/create">Satın Al</a>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <hr class="sep"/>
+
+  <section>
+    <h2 class="h2">Sık Sorulanlar</h2>
+    <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:12px">
+      <div class="card"><div class="p">
+        <b>Sayfa hemen aktif olur mu?</b>
+        <div class="muted" style="margin-top:8px">Ödeme sonrası builder linki açılır; içerik girip yayınlayınca linkiniz hazır.</div>
+      </div></div>
+      <div class="card"><div class="p">
+        <b>Müzik otomatik çalar mı?</b>
+        <div class="muted" style="margin-top:8px">Mobil tarayıcılar otomatik çalmayı engeller; “Müziği Başlat” butonu ile başlar.</div>
+      </div></div>
+      <div class="card"><div class="p">
+        <b>Kilit ekranı nasıl çalışır?</b>
+        <div class="muted" style="margin-top:8px">PIN belirleyince sayfa açılışta PIN sorar. Doğru PIN ile görüntülenir.</div>
+      </div></div>
+      <div class="card"><div class="p">
+        <b>URL nasıl olacak?</b>
+        <div class="muted" style="margin-top:8px">askimiz.com/isim.isim formatında (Türkçe karakterler otomatik düzeltilir).</div>
+      </div></div>
+    </div>
+  </section>
 </div>
 
+</main>
   <footer class="footer">
     <div class="container">
       <div>© 2026 askimiz.com</div>
