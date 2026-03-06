@@ -6,6 +6,7 @@
   <title>Demo t1 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
   <link rel="stylesheet" href="/assets/css/template.css"/>
+  <link rel="stylesheet" href="/assets/css/skin-standard.css"/>
   
 </head>
 <body>
@@ -47,6 +48,8 @@
     };
     document.getElementById('root').innerHTML = renderTemplate('t1', site);
 
+      const mod = await import('/assets/js/effects-standard.js');
+    mod.initStandardEffects();
   </script>
 </body>
 </html>

@@ -117,65 +117,71 @@ async function main(){
     box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
   }
 
-  // Advanced fields
   let highlights = (site?.content?.highlights || []).map(x=>({title:x.title||'', text:x.text||''}));
   let chapters   = (site?.content?.chapters || []).map(x=>({title:x.title||'', text:x.text||'', photoUrl:x.photoUrl||''}));
   let timeline   = (site?.content?.timeline || []).map(x=>({title:x.title||'', date:x.date||'', text:x.text||'', photoUrl:x.photoUrl||''}));
   let videoUrl   = site?.content?.videoUrl || '';
 
-  const tpl = site?.templateId || '';
-  const needsTimeline = (tpl==='p3' || tpl==='t3');
-  const needsHighlights = (tpl==='p1');
-  const needsChapters = (tpl==='p2');
-  const needsVideo = (tpl==='p2') || (site?.plan==='premium') || (site?.addons?.video===true);
-
   const advBox = q('#advancedBox');
   const fields = q('#premiumFields');
 
-  if(needsHighlights || needsChapters || needsTimeline || needsVideo){
+  const isPremium = site?.plan === 'premium';
+  const canVideo = isPremium || (site?.addons?.video===true);
+  const showTimeline = isPremium || (site?.templateId==='t3');
+
+  if(isPremium || canVideo || showTimeline){
     advBox.style.display='block';
     fields.innerHTML='';
 
-    if(needsHighlights){
-      const div=document.createElement('div');
-      fields.appendChild(div);
-      renderRepeater(div, highlights, [
+    if(isPremium){
+      const hDiv=document.createElement('div'); fields.appendChild(hDiv);
+      renderRepeater(hDiv, highlights, [
         {k:'title', label:'Başlık', type:'text'},
         {k:'text', label:'Metin', type:'textarea'}
-      ], 'Öne Çıkan Anlar (P1)');
-    }
+      ], 'Öne Çıkan Anlar');
 
-    if(needsChapters){
-      const div=document.createElement('div');
-      fields.appendChild(div);
-      renderRepeater(div, chapters, [
+      const cDiv=document.createElement('div'); fields.appendChild(cDiv);
+      renderRepeater(cDiv, chapters, [
         {k:'title', label:'Başlık', type:'text'},
         {k:'text', label:'Metin', type:'textarea'},
         {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
-      ], 'Chapters (P2)');
-    }
+      ], 'Chapters (Cinematic)');
 
-    if(needsVideo){
-      const box=document.createElement('div');
-      box.className='tcard';
-      box.style.borderRadius='18px';
-      box.innerHTML=`
+      const vBox=document.createElement('div');
+      vBox.className='tcard'; vBox.style.borderRadius='18px';
+      vBox.innerHTML=`
         <b>🎬 Video URL</b>
         <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
         <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
       `;
-      fields.appendChild(box);
-    }
+      fields.appendChild(vBox);
 
-    if(needsTimeline){
-      const div=document.createElement('div');
-      fields.appendChild(div);
-      renderRepeater(div, timeline, [
+      const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+      renderRepeater(tDiv, timeline, [
         {k:'title', label:'Başlık', type:'text'},
         {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
         {k:'text', label:'Metin', type:'textarea'},
         {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
-      ], 'Timeline');
+      ], 'Timeline (Deluxe)');
+    } else {
+      if(canVideo){
+        const vBox=document.createElement('div');
+        vBox.className='tcard'; vBox.style.borderRadius='18px';
+        vBox.innerHTML=`
+          <b>🎬 Video URL (Eklenti)</b>
+          <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
+          <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
+        `;
+        fields.appendChild(vBox);
+      }
+      if(showTimeline){
+        const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+        renderRepeater(tDiv, timeline, [
+          {k:'title', label:'Başlık', type:'text'},
+          {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
+          {k:'text', label:'Metin', type:'textarea'}
+        ], 'Timeline');
+      }
     }
   }
 
@@ -219,7 +225,7 @@ async function main(){
     }catch(err){ alert(err.message||'Foto upload hata'); }
   });
 
-  q('#musicInput').addEventListener('change', async (e)=>{
+  q('#musicInput')?.addEventListener('change', async (e)=>{
     const f=e.target.files?.[0]; e.target.value='';
     if(!f) return;
     if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');

@@ -19,6 +19,7 @@ async function main(){
   const data = await getJSON(url);
 
   if(data.plan === 'premium') ensureCss('/assets/css/skin-premium.css');
+  if(data.plan === 'standard') ensureCss('/assets/css/skin-standard.css');
 
   document.getElementById('root').innerHTML = renderTemplate(data.templateId, data);
 
@@ -29,6 +30,9 @@ async function main(){
   if(data.plan === 'premium'){
     const mod = await import('/assets/js/effects-premium.js');
     mod.initPremiumEffects(data);
+  } else if(data.plan === 'standard'){
+    const mod = await import('/assets/js/effects-standard.js');
+    mod.initStandardEffects();
   }
 }
 
