@@ -3,14 +3,27 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Şablonlar — askimiz.com</title>
+  <title>Sayfanı Oluştur — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
   <link rel="stylesheet" href="/assets/css/app.css"/>
-  
+  <link rel="stylesheet" href="/assets/css/create.css"/>
 </head>
 <body>
   <header class="header">
     <div class="container">
+<div class="pagehead">
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div>
+      <div class="badge">🧩 Paket + Şablon + Eklentiler</div>
+      <h1 class="title" style="margin-top:10px">Sayfanı Oluştur</h1>
+      <div class="desc">Önce URL’ni seç, sonra paket/şablon ve istersen eklentileri ekle. Premium’da her şablonda tüm özellikler var.</div>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <a class="btn" href="/templates">Şablonlar</a>
+      <a class="btn primary" href="/create?plan=premium">Premium</a>
+    </div>
+  </div>
+</div>
       <a class="brand" href="/">
         <div class="logo"></div>
         <div class="t"><b>askimiz.com</b><span>çiftlere özel mini site</span></div>
@@ -22,113 +35,69 @@
     </div>
   </header>
   <main class="page">
-<div class="container">
-  <div class="pagehead">
-    <div class="row" style="justify-content:space-between;align-items:flex-start">
-      <div>
-        <div class="badge">🎨 Şablon Setleri</div>
-        <h1 class="title" style="margin-top:10px">Şablonları İncele</h1>
-        <div class="desc">
-          Starter / Standart / Premium setleri farklıdır. Premium paket: <b>tüm özellikler</b> + <b>premium şablon seti</b>.
-        </div>
+  <div class="container">
+<div class="grid two" style="margin-top:14px">
+    <div class="card"><div class="p">
+      <b>1) URL Seç</b>
+      <div class="row" style="margin-top:10px">
+        <input id="slug" class="input" placeholder="batikan.sezin" value="batikan.sezin"/>
+        <button id="btnSlug" class="btn" type="button">Kontrol Et</button>
       </div>
-      <div class="row" style="margin-top:8px">
-        <a class="btn" href="/create">Satın Al</a>
-        <a class="btn primary" href="/create?plan=premium">Premium Al</a>
-      </div>
-    </div>
-  </div>
+      <div class="small" style="margin-top:10px"><span class="muted">Oluşan URL:</span> <span id="slugPreview" class="kbd">askimiz.com/batikan.sezin</span></div>
+      <div id="slugMsg" class="small" style="margin-top:8px"></div>
 
-  <div style="margin-top:16px" class="grid cards3">
-    <div class="card section-card"><div class="p">
-      <div class="badge">Starter</div>
-      <div style="font-weight:980;font-size:16px;margin-top:10px">S1 — Starter</div>
-      <div class="muted" style="margin-top:8px">Sade görünüm, hızlı kurulum.</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/s1">Demo</a>
-        <a class="btn primary" href="/create?plan=starter">Seç</a>
-      </div>
-    </div></div>
+      <hr class="sep"/>
 
-    <div class="card section-card"><div class="p">
-      <div class="badge">Standart</div>
-      <div style="font-weight:980;font-size:16px;margin-top:10px">T1 / T2 / T3</div>
-      <div class="muted" style="margin-top:8px">Renkli standart skin + modern kartlar.</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/t1">Demo</a>
-        <a class="btn primary" href="/create?plan=standard">Seç</a>
+      <b>2) Paket Seç</b>
+      <div class="grid" style="margin-top:10px">
+        <label class="radio"><input type="radio" name="plan" value="starter"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Giriş</b><b>999 TL</b></div><div class="small muted" style="margin-top:4px">Şablon seçimi yok (t1 sabit)</div></div></label>
+        <label class="radio" style="border-color:#111"><input type="radio" name="plan" value="standard"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Standart ⭐</b><b>1499 TL</b></div><div class="small muted" style="margin-top:4px">Şablon seçimi aktif</div></div></label>
+        <label class="radio"><input type="radio" name="plan" value="premium"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Premium 👑</b><b>1999 TL</b></div><div class="small muted" style="margin-top:4px">Tüm opsiyonlar dahil</div></div></label>
       </div>
-    </div></div>
 
-    <div class="card section-card" style="border-color:#111"><div class="p">
-      <div class="badge">Premium</div>
-      <div style="font-weight:980;font-size:16px;margin-top:10px">P1 / P2 / P3</div>
-      <div class="muted" style="margin-top:8px">Glass + glow + lightbox + canlı sayaç + deluxe timeline + video.</div>
-      <div class="row" style="margin-top:12px">
-        <a class="btn" href="/demo/p3">Demo</a>
-        <a class="btn primary" href="/create?plan=premium">Premium Al</a>
+      <hr class="sep"/>
+
+      <b>3) Şablon Seç</b>
+<div id="tplNote" class="notice" style="margin-top:10px; display:none">
+  Giriş paketinde şablon seçimi yok (Starter sabit şablon).
+</div>
+<div id="templateOptions" class="grid" style="margin-top:10px"></div>
+
+<hr class="sep"/>
+
+
+      <b>4) Ek Özellikler</b>
+      <div class="grid" style="margin-top:10px">
+        <label class="check"><input id="ad_music" type="checkbox"/><div><b>🎵 Sayfada müzik</b> <span class="muted">(99 TL)</span></div></label>
+        <label class="check"><input id="ad_lock" type="checkbox"/><div><b>🔒 Kilit ekranı</b> <span class="muted">(49 TL)</span></div></label>
+        <div id="addonsDynamic"></div>
       </div>
     </div></div>
-  </div>
 
-  <hr class="sep"/>
+    <div class="card"><div class="p">
+      <b>Özet</b>
+      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
+        <div class="small muted">Toplam</div>
+        <div id="total" class="total">1499 TL</div>
+      </div>
 
-  <h2 class="h2">Standart Şablonlar</h2>
-  <p class="muted" style="margin-top:8px">Standart paket: şablon seçimi + daha canlı görünüm. (Demo: t1/t2/t3)</p>
-  <div class="grid cards3" style="margin-top:12px">
-    <div class="card section-card"><div class="p">
-      <b>Romantic Classic</b>
-      <div class="muted" style="margin-top:8px">Klasik romantik, canlı standart skin.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/t1">Demo</a><a class="btn primary" href="/create?plan=standard">Satın Al</a></div>
-    </div></div>
-    <div class="card section-card"><div class="p">
-      <b>Minimal Love</b>
-      <div class="muted" style="margin-top:8px">Sade ama modern; tipografi güçlü.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/t2">Demo</a><a class="btn primary" href="/create?plan=standard">Satın Al</a></div>
-    </div></div>
-    <div class="card section-card"><div class="p">
-      <b>Memory Timeline</b>
-      <div class="muted" style="margin-top:8px">Timeline odaklı standart şablon.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/t3">Demo</a><a class="btn primary" href="/create?plan=standard">Satın Al</a></div>
-    </div></div>
-  </div>
+      <div id="suggestion" class="notice" style="margin-top:12px;display:none">
+        <b>STANDART paket daha mantıklı</b>
+        <div class="small" style="margin-top:6px">Eklerle birlikte Standart paket daha avantajlı.</div>
+      </div>
 
-  <hr class="sep"/>
-
-  <h2 class="h2">Premium Şablonlar</h2>
-  <p class="muted" style="margin-top:8px">
-    Premium’da <b>tüm özellikler her şablonda</b> var. Şablon farkı sadece yerleşim/stil.
-    (Demo: p1/p2/p3)
-  </p>
-  <div class="grid cards3" style="margin-top:12px">
-    <div class="card section-card" style="border-color:#111"><div class="p">
-      <b>Royal Glow</b>
-      <div class="muted" style="margin-top:8px">Romantik premium yerleşim.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/p1">Demo</a><a class="btn primary" href="/create?plan=premium">Premium</a></div>
+      <button id="btnPay" class="btn primary" style="width:100%;margin-top:12px" type="button">Ödemeye Geç (DEV)</button>
     </div></div>
-    <div class="card section-card" style="border-color:#111"><div class="p">
-      <b>Cinematic Story</b>
-      <div class="muted" style="margin-top:8px">Film vibe + chapters yerleşimi.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/p2">Demo</a><a class="btn primary" href="/create?plan=premium">Premium</a></div>
-    </div></div>
-    <div class="card section-card" style="border-color:#111"><div class="p">
-      <b>Infinity Timeline Deluxe</b>
-      <div class="muted" style="margin-top:8px">Timeline ağırlıklı premium yerleşim.</div>
-      <div class="row" style="margin-top:12px"><a class="btn" href="/demo/p3">Demo</a><a class="btn primary" href="/create?plan=premium">Premium</a></div>
-    </div></div>
-  </div>
-
-  <div class="notice" style="margin-top:16px">
-    Premium farkı: <b>canlı sayaç (gün/saat/dakika/saniye)</b> + <b>blur lightbox</b> + <b>deluxe timeline</b> + <b>video</b> + premium skin.
   </div>
 </div>
-</main>
+
+  </main>
   <footer class="footer">
     <div class="container">
       <div>© 2026 askimiz.com</div>
       <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
     </div>
   </footer>
-  
+  <script type="module" src="/assets/js/create.js"></script>
 </body>
 </html>

@@ -1,81 +1,73 @@
-const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const { sql } = require('@vercel/postgres');
+// Build step for Vercel "Output Directory: public"
+// Copies all static files/folders into ./public so Vercel can serve them.
+// Serverless functions under /api remain in project root and continue to work.
+const fs = require("fs");
+const path = require("path");
 
-const TR_MAP = { 'ş':'s','Ş':'s','ı':'i','I':'i','İ':'i','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c' };
+const ROOT = process.cwd();
+const OUT = path.join(ROOT, "public");
 
-function normalizeSlug(raw){
-  const trimmed = (raw || '').trim();
-  const tr = [...trimmed].map(ch => TR_MAP[ch] || ch).join('');
-  let s = tr.toLowerCase().replace(/[^a-z0-9.-]+/g,'-');
-  s = s.replace(/-+/g,'-').replace(/^\-+|\-+$/g,'');
-  s = s.replace(/\.+/g,'.').replace(/^\.+|\.+$/g,'');
-  return s.slice(0,48);
-}
-function isValidSlug(slug){
-  return /^[a-z0-9]+([.-][a-z0-9]+)*$/.test(slug) && slug.length>=3 && slug.length<=48;
-}
-function json(res, code, obj){
-  res.statusCode = code;
-  res.setHeader('content-type','application/json; charset=utf-8');
-  res.end(JSON.stringify(obj));
-}
-function readBody(req){
-  return new Promise((resolve, reject) => {
-    let data = '';
-    req.on('data', chunk => data += chunk);
-    req.on('end', () => resolve(data));
-    req.on('error', reject);
-  });
-}
-function readBuffer(req){
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', c => chunks.push(c));
-    req.on('end', () => resolve(Buffer.concat(chunks)));
-    req.on('error', reject);
-  });
-}
-function sha256(s){ return crypto.createHash('sha256').update(s).digest('hex'); }
-function randomToken(bytes=24){ return crypto.randomBytes(bytes).toString('hex'); }
+const COPY_ITEMS = [
+  "assets",
+  "demo",
+  "index.html",
+  "create.html",
+  "templates.html",
+  "builder.html",
+  "slug.html",
+  "vercel.json" // optional; harmless to keep a copy
+];
 
-async function getBuilderToken(slug){
-  const { rows } = await sql`SELECT token_hash, expires_at FROM builder_tokens WHERE site_slug=${slug} LIMIT 1;`;
-  return rows[0] || null;
-}
-async function verifyBuilderToken(slug, token){
-  const t = await getBuilderToken(slug);
-  if(!t) return false;
-  return sha256(token) === t.token_hash && new Date(t.expires_at) > new Date();
+function rmrf(p){
+  if(!fs.existsSync(p)) return;
+  fs.rmSync(p, { recursive: true, force: true });
 }
 
-const PLAN_PRICE = { starter:999, standard:1499, premium:1999 };
-const PLAN_PHOTO_LIMIT = { starter:3, standard:10, premium:25 };
-const ADDON_PRICE = { music:99, lock:49, theme:149, photoPack_to10:269, photoPack_to25:399, animations:199, video:299 };
-
-function computeTotal(plan, addons){
-  if(plan === 'premium') return PLAN_PRICE.premium; // all included
-  let total = PLAN_PRICE[plan] || 0;
-  if(addons.music) total += ADDON_PRICE.music;
-  if(addons.lock) total += ADDON_PRICE.lock;
-  if(plan==='starter' && addons.theme) total += ADDON_PRICE.theme;
-  if(addons.photoPack==='to10') total += ADDON_PRICE.photoPack_to10;
-  if(addons.photoPack==='to25') total += ADDON_PRICE.photoPack_to25;
-  if(addons.animations) total += ADDON_PRICE.animations;
-  if(plan!=='premium' && addons.video) total += ADDON_PRICE.video;
-  return total;
-}
-function computePhotoLimit(plan, addons){
-  if(plan==='starter' && addons.photoPack==='to10') return 10;
-  if(plan==='standard' && addons.photoPack==='to25') return 25;
-  return PLAN_PHOTO_LIMIT[plan] || 3;
+function mkdirp(p){
+  fs.mkdirSync(p, { recursive: true });
 }
 
-module.exports = {
-  bcrypt, sql,
-  normalizeSlug, isValidSlug,
-  json, readBody, readBuffer,
-  sha256, randomToken,
-  verifyBuilderToken,
-  computeTotal, computePhotoLimit
-};
+function copyFile(src, dst){
+  mkdirp(path.dirname(dst));
+  fs.copyFileSync(src, dst);
+}
+
+function copyDir(src, dst){
+  mkdirp(dst);
+  for(const ent of fs.readdirSync(src, { withFileTypes: true })){
+    const s = path.join(src, ent.name);
+    const d = path.join(dst, ent.name);
+    if(ent.isDirectory()) copyDir(s, d);
+    else if(ent.isFile()) copyFile(s, d);
+  }
+}
+
+function exists(p){ return fs.existsSync(path.join(ROOT, p)); }
+
+function main(){
+  rmrf(OUT);
+  mkdirp(OUT);
+
+  for(const item of COPY_ITEMS){
+    const src = path.join(ROOT, item);
+    const dst = path.join(OUT, item);
+    if(!fs.existsSync(src)) continue;
+
+    const stat = fs.statSync(src);
+    if(stat.isDirectory()) copyDir(src, dst);
+    else copyFile(src, dst);
+  }
+
+  // Also copy any root-level static files if you later add them:
+  // e.g. robots.txt, sitemap.xml, favicon.ico, etc.
+  const extra = ["robots.txt","sitemap.xml","favicon.ico","favicon.png","manifest.json"];
+  for(const item of extra){
+    const src = path.join(ROOT, item);
+    const dst = path.join(OUT, item);
+    if(fs.existsSync(src) && fs.statSync(src).isFile()) copyFile(src, dst);
+  }
+
+  console.log("✅ Build complete. Static files copied to /public");
+}
+
+main();

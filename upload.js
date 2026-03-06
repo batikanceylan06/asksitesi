@@ -1,56 +1,81 @@
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { sql } = require('@vercel/postgres');
-const { json, sha256, computePhotoLimit } = require('./_util');
 
-module.exports = async (req, res) => {
-  if(req.method !== 'GET') return json(res, 405, { error:'Method not allowed' });
+const TR_MAP = { 'ş':'s','Ş':'s','ı':'i','I':'i','İ':'i','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c' };
 
-  const url = new URL(req.url, 'http://localhost');
-  const slug = url.searchParams.get('slug') || '';
-  const token = url.searchParams.get('token') || '';
-
-  if(!slug) return json(res, 400, { error:'Slug yok' });
-
-  const { rows } = await sql`
-    SELECT slug, plan, template_id, addons, content, music_url, lock_pin_hash, status, created_at
-    FROM sites WHERE slug=${slug} LIMIT 1;
-  `;
-  const site = rows[0];
-  if(!site) return json(res, 404, { error:'Sayfa bulunamadı' });
-
-  if(site.status !== 'published'){
-    if(!token) return json(res, 404, { error:'Sayfa bulunamadı' });
-    const { rows:trows } = await sql`SELECT token_hash, expires_at FROM builder_tokens WHERE site_slug=${slug} LIMIT 1;`;
-    const t = trows[0];
-    if(!t) return json(res, 404, { error:'Sayfa bulunamadı' });
-    const ok = sha256(token) === t.token_hash && new Date(t.expires_at) > new Date();
-    if(!ok) return json(res, 404, { error:'Sayfa bulunamadı' });
-  }
-
-  let addonsOut = site.addons || {};
-  if(site.plan === 'premium'){
-    addonsOut = Object.assign({}, addonsOut, { music:true, lock:true, theme:true, animations:true, video:true, photoPack:null });
-  }
-  if(site.plan === 'standard'){
-    addonsOut = Object.assign({}, addonsOut, { theme:true });
-  }
-
-  const { rows: arows } = await sql`
-    SELECT url FROM assets WHERE site_slug=${slug} AND type='photo' ORDER BY created_at ASC;
-  `;
-  const photos = arows.map(r => r.url);
-
-  const photoLimit = computePhotoLimit(site.plan, addonsOut || {});
-  return json(res, 200, {
-    slug: site.slug,
-    plan: site.plan,
-    templateId: site.template_id,
-    addons: addonsOut || {},
-    content: site.content || {},
-    photoLimit,
-    musicUrl: site.music_url || null,
-    lockEnabled: !!site.lock_pin_hash,
-    status: site.status,
-    photos: photos.slice(0, photoLimit),
-    createdAt: site.created_at
+function normalizeSlug(raw){
+  const trimmed = (raw || '').trim();
+  const tr = [...trimmed].map(ch => TR_MAP[ch] || ch).join('');
+  let s = tr.toLowerCase().replace(/[^a-z0-9.-]+/g,'-');
+  s = s.replace(/-+/g,'-').replace(/^\-+|\-+$/g,'');
+  s = s.replace(/\.+/g,'.').replace(/^\.+|\.+$/g,'');
+  return s.slice(0,48);
+}
+function isValidSlug(slug){
+  return /^[a-z0-9]+([.-][a-z0-9]+)*$/.test(slug) && slug.length>=3 && slug.length<=48;
+}
+function json(res, code, obj){
+  res.statusCode = code;
+  res.setHeader('content-type','application/json; charset=utf-8');
+  res.end(JSON.stringify(obj));
+}
+function readBody(req){
+  return new Promise((resolve, reject) => {
+    let data = '';
+    req.on('data', chunk => data += chunk);
+    req.on('end', () => resolve(data));
+    req.on('error', reject);
   });
+}
+function readBuffer(req){
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+function sha256(s){ return crypto.createHash('sha256').update(s).digest('hex'); }
+function randomToken(bytes=24){ return crypto.randomBytes(bytes).toString('hex'); }
+
+async function getBuilderToken(slug){
+  const { rows } = await sql`SELECT token_hash, expires_at FROM builder_tokens WHERE site_slug=${slug} LIMIT 1;`;
+  return rows[0] || null;
+}
+async function verifyBuilderToken(slug, token){
+  const t = await getBuilderToken(slug);
+  if(!t) return false;
+  return sha256(token) === t.token_hash && new Date(t.expires_at) > new Date();
+}
+
+const PLAN_PRICE = { starter:999, standard:1499, premium:1999 };
+const PLAN_PHOTO_LIMIT = { starter:3, standard:10, premium:25 };
+const ADDON_PRICE = { music:99, lock:49, theme:149, photoPack_to10:269, photoPack_to25:399, animations:199, video:299 };
+
+function computeTotal(plan, addons){
+  if(plan === 'premium') return PLAN_PRICE.premium; // all included
+  let total = PLAN_PRICE[plan] || 0;
+  if(addons.music) total += ADDON_PRICE.music;
+  if(addons.lock) total += ADDON_PRICE.lock;
+  if(plan==='starter' && addons.theme) total += ADDON_PRICE.theme;
+  if(addons.photoPack==='to10') total += ADDON_PRICE.photoPack_to10;
+  if(addons.photoPack==='to25') total += ADDON_PRICE.photoPack_to25;
+  if(addons.animations) total += ADDON_PRICE.animations;
+  if(plan!=='premium' && addons.video) total += ADDON_PRICE.video;
+  return total;
+}
+function computePhotoLimit(plan, addons){
+  if(plan==='starter' && addons.photoPack==='to10') return 10;
+  if(plan==='standard' && addons.photoPack==='to25') return 25;
+  return PLAN_PHOTO_LIMIT[plan] || 3;
+}
+
+module.exports = {
+  bcrypt, sql,
+  normalizeSlug, isValidSlug,
+  json, readBody, readBuffer,
+  sha256, randomToken,
+  verifyBuilderToken,
+  computeTotal, computePhotoLimit
 };

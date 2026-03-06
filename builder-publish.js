@@ -1,53 +1,25 @@
-const { sql } = require('@vercel/postgres');
-const { json, readBody, verifyBuilderToken, bcrypt } = require('./_util');
+# askimiz.com — Static HTML/CSS/JS + Vercel Functions + Vercel Postgres + Vercel Blob
 
-module.exports = async (req, res) => {
-  if(req.method !== 'POST') return json(res, 405, { error:'Method not allowed' });
+- Next.js yok.
+- Statik sayfalar root’ta.
+- Dinamik işler `api/` (Vercel Functions).
 
-  const raw = await readBody(req);
-  let body = {};
-  try{ body = JSON.parse(raw || '{}'); }catch{}
+## Kurulum
+1) Vercel’e deploy et
+2) Storage > Postgres + Blob ekle
+3) Postgres Query: `scripts/schema.sql`
+4) Local:
+   ```bash
+   vercel env pull .env.development.local
+   npm i
+   npx vercel dev
+   ```
 
-  const slug = body.slug || '';
-  const token = body.token || '';
-  const content = body.content || {};
-  const lockPin = body.lockPin || null;
+## Kurallar (v2)
+- Starter (999): şablon seçimi yok (t1 sabit).
+- Premium (1999): müzik + kilit + tema + animasyon + video dahil (ek ücret yok).
 
-  if(!slug || !token) return json(res, 401, { error:'Yetkisiz' });
-
-  const ok = await verifyBuilderToken(slug, token);
-  if(!ok) return json(res, 401, { error:'Token geçersiz' });
-
-  const { rows } = await sql`SELECT slug, plan, addons FROM sites WHERE slug=${slug} LIMIT 1;`;
-  if(!rows[0]) return json(res, 404, { error:'Site yok' });
-
-  const plan = rows[0].plan;
-  const addons = rows[0].addons || {};
-  const allowLock = (plan === 'premium') || (addons.lock === true);
-
-  const clean = {
-    names1: String(content.names1||''),
-    names2: String(content.names2||''),
-    date: String(content.date||''),
-    story: String(content.story||''),
-    outro: String(content.outro||''),
-    highlights: Array.isArray(content.highlights) ? content.highlights : [],
-    chapters: Array.isArray(content.chapters) ? content.chapters : [],
-    videoUrl: String(content.videoUrl||''),
-    timeline: Array.isArray(content.timeline) ? content.timeline : [],
-  };
-
-  await sql`
-    UPDATE sites SET content=${JSON.stringify(clean)}::jsonb, updated_at=now()
-    WHERE slug=${slug};
-  `;
-
-  if(allowLock && lockPin && String(lockPin).trim().length >= 3){
-    const hash = await bcrypt.hash(String(lockPin).trim(), 10);
-    await sql`UPDATE sites SET lock_pin_hash=${hash}, updated_at=now() WHERE slug=${slug};`;
-  }else{
-    await sql`UPDATE sites SET lock_pin_hash=NULL, updated_at=now() WHERE slug=${slug};`;
-  }
-
-  return json(res, 200, { ok:true });
-};
+## Test
+- /create → “Ödemeye Geç (DEV)” → builder linki açılır.
+- Builder’da foto/müzik yükle, kaydet, yayınla.
+- /{slug} açılır.

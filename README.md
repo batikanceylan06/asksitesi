@@ -1,25 +1,52 @@
-# askimiz.com — Static HTML/CSS/JS + Vercel Functions + Vercel Postgres + Vercel Blob
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Demo s1 — askimiz.com</title>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
+  
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { renderTemplate } from '/assets/js/templates.js';
+    const site = {
+      slug:'demo',
+      plan:'starter',
+      templateId:'s1',
+      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
+      photoLimit: 25,
+      musicUrl: null,
+      lockEnabled: false,
+      content: {
+        names1: 'Batıkan',
+        names2: 'Sezin',
+        date: '2025-07-17',
+        story: 'Bu bir demo. Premium ve Standart görünüm farkını göstermek için hazırlanmıştır.',
+        outro: 'Sonsuzluğumuzun bir parçası…',
+        highlights: [
+          { title:'İlk mesaj', text:'O anı hiç unutmuyorum…' },
+          { title:'İlk buluşma', text:'Heyecan ve mutluluk.' },
+          { title:'İlk tatil', text:'Birlikte her şey daha güzel.' }
+        ],
+        chapters: [
+          { title:'Başlangıç', text:'Her şey burada başladı.' },
+          { title:'Güçlendik', text:'Daha da büyüdük.' },
+          { title:'Bugün', text:'Sonsuzluğa…' }
+        ],
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        timeline: [
+          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
+          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
+          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
+        ]
+      },
+      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-s1-${i}/900/900`)
+    };
+    document.getElementById('root').innerHTML = renderTemplate('s1', site);
 
-- Next.js yok.
-- Statik sayfalar root’ta.
-- Dinamik işler `api/` (Vercel Functions).
-
-## Kurulum
-1) Vercel’e deploy et
-2) Storage > Postgres + Blob ekle
-3) Postgres Query: `scripts/schema.sql`
-4) Local:
-   ```bash
-   vercel env pull .env.development.local
-   npm i
-   npx vercel dev
-   ```
-
-## Kurallar (v2)
-- Starter (999): şablon seçimi yok (t1 sabit).
-- Premium (1999): müzik + kilit + tema + animasyon + video dahil (ek ücret yok).
-
-## Test
-- /create → “Ödemeye Geç (DEV)” → builder linki açılır.
-- Builder’da foto/müzik yükle, kaydet, yayınla.
-- /{slug} açılır.
+  </script>
+</body>
+</html>
