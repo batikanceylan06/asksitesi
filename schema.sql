@@ -1,101 +1,54 @@
-import { pathSlug, qs } from './slug-util.js';
-import { postJSON, getJSON } from './api.js';
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Demo p1 — askimiz.com</title>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
+  <link rel="stylesheet" href="/assets/css/skin-premium.css"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module">
+    import { renderTemplate } from '/assets/js/templates.js';
+    const site = {
+      slug:'demo',
+      plan:'premium',
+      templateId:'p1',
+      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
+      photoLimit: 25,
+      musicUrl: null,
+      lockEnabled: false,
+      content: {
+        names1: 'Batıkan',
+        names2: 'Sezin',
+        date: '2025-07-17',
+        story: 'Bu bir demo. Premium ve Standart görünüm farkını göstermek için hazırlanmıştır.',
+        outro: 'Sonsuzluğumuzun bir parçası…',
+        highlights: [
+          { title:'İlk mesaj', text:'O anı hiç unutmuyorum…' },
+          { title:'İlk buluşma', text:'Heyecan ve mutluluk.' },
+          { title:'İlk tatil', text:'Birlikte her şey daha güzel.' }
+        ],
+        chapters: [
+          { title:'Başlangıç', text:'Her şey burada başladı.' },
+          { title:'Güçlendik', text:'Daha da büyüdük.' },
+          { title:'Bugün', text:'Sonsuzluğa…' }
+        ],
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        timeline: [
+          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
+          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
+          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
+        ]
+      },
+      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-p1-${i}/900/900`)
+    };
+    document.getElementById('root').innerHTML = renderTemplate('p1', site);
+    const mod = await import('/assets/js/effects-premium.js');
+    mod.initPremiumEffects(site);
 
-const q=(s)=>document.querySelector(s);
-
-async function uploadRaw(file,type,slug,token){
-  const url=`/api/upload?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&filename=${encodeURIComponent(file.name)}`;
-  const r=await fetch(url,{method:'PUT',headers:{'content-type':file.type||'application/octet-stream'},body:file});
-  const j=await r.json().catch(()=> ({}));
-  if(!r.ok) throw new Error(j.error||'Upload hatası');
-  return j.url;
-}
-
-async function main(){
-  const slug=pathSlug();
-  const token=qs('token')||'';
-  if(!token){
-    q('#root').innerHTML=`<div class="container"><div class="card"><div class="p"><div class="h2">Builder</div><div class="err" style="margin-top:8px">Token yok. Bu sayfa ödeme sonrası verilen link ile açılır.</div></div></div></div>`;
-    return;
-  }
-
-  let site=null;
-  try{
-    site=await getJSON(`/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`);
-  }catch{}
-
-  const allowMusic = site ? (site.plan==='premium' || site.addons?.music===true) : true;
-  const allowLock  = site ? (site.plan==='premium' || site.addons?.lock===true) : true;
-
-  if(site?.photoLimit){
-    const note=document.createElement('div');
-    note.className='small muted';
-    note.style.marginTop='6px';
-    note.textContent=`Foto limitin: ${site.photoLimit}`;
-    const photoBox=q('#photoBox');
-    photoBox.insertBefore(note, photoBox.querySelector('input'));
-  }
-
-  if(!allowMusic){
-    const box=q('#musicBox');
-    box.style.opacity='0.6';
-    box.innerHTML=`<div style="font-weight:800">🎵 Müzik Yükle</div><div class="small muted" style="margin-top:6px">Bu paket için müzik eklentisi alınmamış.</div>`;
-  }
-  if(!allowLock){
-    const box=q('#lockBox');
-    box.style.opacity='0.6';
-    box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
-  }
-
-  q('#slugText').textContent=slug;
-  q('#previewLink').href=`/${slug}?token=${encodeURIComponent(token)}`;
-  q('#previewLink').textContent=`Önizleme: /${slug}?token=...`;
-
-  q('#saveBtn').addEventListener('click', async ()=>{
-    try{
-      await postJSON('/api/builder-save',{
-        slug, token,
-        content:{
-          names1:q('#names1')?.value||'',
-          names2:q('#names2')?.value||'',
-          date:q('#date')?.value||'',
-          story:q('#story')?.value||'',
-          outro:q('#outro')?.value||''
-        },
-        lockPin: allowLock ? (q('#lockpin')?.value||null) : null
-      });
-      alert('Kaydedildi ✅');
-    }catch(e){ alert(e.message||'Kaydetme hatası'); }
-  });
-
-  q('#publishBtn').addEventListener('click', async ()=>{
-    try{
-      await postJSON('/api/builder-publish',{slug,token});
-      alert('Yayınlandı ✅');
-      window.location.href=`/${slug}`;
-    }catch(e){ alert(e.message||'Yayınlama hatası'); }
-  });
-
-  q('#photoInput').addEventListener('change', async (e)=>{
-    const f=e.target.files?.[0]; e.target.value='';
-    if(!f) return;
-    try{
-      const url=await uploadRaw(f,'photo',slug,token);
-      const img=document.createElement('img'); img.src=url;
-      q('#photoGrid').appendChild(img);
-    }catch(err){ alert(err.message||'Foto upload hata'); }
-  });
-
-  q('#musicInput').addEventListener('change', async (e)=>{
-    const f=e.target.files?.[0]; e.target.value='';
-    if(!f) return;
-    if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');
-    try{
-      await uploadRaw(f,'music',slug,token);
-      q('#musicStatus').textContent='Müzik yüklendi ✅';
-      q('#musicStatus').className='ok';
-    }catch(err){ alert(err.message||'Müzik upload hata'); }
-  });
-}
-
-document.addEventListener('DOMContentLoaded', main);
+  </script>
+</body>
+</html>

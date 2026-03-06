@@ -1,165 +1,240 @@
-function esc(s){return (s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-function fmtDate(d){ if(!d) return ''; try{ return new Date(d).toLocaleDateString('tr-TR',{year:'numeric',month:'long',day:'numeric'});}catch{return d;} }
-function galleryHTML(photos){
-  if(!photos?.length) return `<div class="tcard muted" style="text-align:center">Fotoğraf yükledikçe burada görünecek.</div>`;
-  return `<div class="gallery">` + photos.map(u=>`<div class="gimg"><img src="${esc(u)}" alt="Foto"/></div>`).join('') + `</div>`;
+import { pathSlug, qs } from './slug-util.js';
+import { postJSON, getJSON } from './api.js';
+
+const q=(s)=>document.querySelector(s);
+
+async function uploadRaw(file,type,slug,token){
+  const url=`/api/upload?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}&type=${encodeURIComponent(type)}&filename=${encodeURIComponent(file.name)}`;
+  const r=await fetch(url,{method:'PUT',headers:{'content-type':file.type||'application/octet-stream'},body:file});
+  const j=await r.json().catch(()=> ({}));
+  if(!r.ok) throw new Error(j.error||'Upload hatası');
+  return j.url;
 }
 
-export function renderT1(site){
-  const hero=site.photos?.[0]||'';
-  const photos=(site.photos||[]).slice(0,site.photoLimit||3);
-  return `
-  <div class="template-wrap" style="background:linear-gradient(to bottom,#fff1f2,#fff,#fff);">
-    <div class="tbox">
-      <div class="hero-card">
-        <div class="row" style="align-items:flex-start;justify-content:space-between">
-          <div>
-            <div class="small muted" style="letter-spacing:.18em;text-transform:uppercase">Romantic Classic</div>
-            <div style="font-size:30px;font-weight:900;margin-top:6px">
-              ${esc(site.content.names1||'İsim 1')} <span style="color:#f43f5e">❤</span> ${esc(site.content.names2||'İsim 2')}
-            </div>
-            <div class="muted" style="margin-top:6px;font-size:14px">
-              ${site.content.date?`Tanışma: ${fmtDate(site.content.date)}`:'Tarih ekle'}
-            </div>
-          </div>
-          <div id="musicSlot"></div>
-        </div>
-
-        <div class="grid2" style="margin-top:16px">
-          <div class="heroimg">
-            ${hero?`<img src="${esc(hero)}" alt="Hero"/>`:`<div class="muted" style="padding:18px">Hero foto yükleyin</div>`}
-          </div>
-          <div class="tcard" style="border-radius:26px">
-            <div style="font-weight:800">Bizim Hikayemiz</div>
-            <div style="margin-top:8px;white-space:pre-wrap;line-height:1.6;font-size:14px">
-              ${esc(site.content.story||'Buraya hikayenizi yazın…')}
-            </div>
-            ${site.content.outro?`<div style="margin-top:12px;padding:10px;border-radius:16px;background:#fff1f2;color:#9f1239">${esc(site.content.outro)}</div>`:''}
-          </div>
-        </div>
-
-        <div style="margin-top:20px">
-          <div style="font-weight:800;margin-bottom:10px">Galeri</div>
-          ${galleryHTML(photos)}
-          <div class="small muted" style="text-align:center;margin-top:16px">
-            💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b>
-          </div>
-        </div>
+function renderRepeater(holder, items, schema, title){
+  holder.innerHTML = `
+    <div class="tcard" style="border-radius:18px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+        <b>${title}</b>
+        <button class="btn" type="button" data-add>+ Ekle</button>
       </div>
+      <div data-list style="margin-top:10px; display:grid; gap:10px"></div>
     </div>
-  </div>`;
+  `;
+  const list = holder.querySelector('[data-list]');
+  const addBtn = holder.querySelector('[data-add]');
+
+  function rowHtml(it, idx){
+    const fields = schema.map(s=>{
+      const v = it[s.k] || '';
+      if(s.type === 'textarea'){
+        return `<div><div class="small muted">${s.label}</div><textarea class="input" data-idx="${idx}" data-k="${s.k}">${v}</textarea></div>`;
+      }
+      return `<div><div class="small muted">${s.label}</div><input class="input" value="${v}" data-idx="${idx}" data-k="${s.k}" /></div>`;
+    }).join('');
+    return `
+      <div class="tcard" style="border-radius:18px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+          <b>#${idx+1}</b>
+          <button class="btn" type="button" data-del="${idx}">Sil</button>
+        </div>
+        <div style="margin-top:10px; display:grid; gap:10px">${fields}</div>
+      </div>
+    `;
+  }
+
+  function render(){
+    list.innerHTML = items.map((it, idx)=>rowHtml(it, idx)).join('') || `<div class="muted small">Henüz ek yok.</div>`;
+    list.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const i = Number(btn.getAttribute('data-del'));
+        items.splice(i,1);
+        render();
+      });
+    });
+    list.querySelectorAll('input[data-idx], textarea[data-idx]').forEach(el=>{
+      el.addEventListener('input', ()=>{
+        const i = Number(el.getAttribute('data-idx'));
+        const k = el.getAttribute('data-k');
+        items[i][k] = el.value;
+      });
+    });
+  }
+
+  addBtn.addEventListener('click', ()=>{
+    const obj = {};
+    schema.forEach(s=>obj[s.k]='');
+    items.push(obj);
+    render();
+  });
+
+  render();
 }
 
-export function renderT2(site){
-  const hero=site.photos?.[0]||'';
-  const photos=(site.photos||[]).slice(0,site.photoLimit||3);
-  const strip=photos.map(u=>`
-    <div style="width:176px;height:176px;border-radius:16px;overflow:hidden;background:#f2f2f2;flex:0 0 auto">
-      <img src="${esc(u)}" alt="Foto" style="width:100%;height:100%;object-fit:cover"/>
-    </div>`).join('');
-  return `
-  <div class="template-wrap" style="background:#fff">
-    <div class="tbox" style="max-width:860px">
-      <div class="row" style="align-items:flex-start;justify-content:space-between">
-        <div>
-          <div class="small muted">Minimal Love</div>
-          <div style="font-size:42px;font-weight:950;letter-spacing:-.02em;margin-top:8px">
-            ${esc(site.content.names1||'İsim 1')} <span style="color:#d4d4d8">×</span> ${esc(site.content.names2||'İsim 2')}
-          </div>
-          <div class="muted" style="margin-top:8px;font-size:14px">${site.content.date?fmtDate(site.content.date):'Tarih ekle'}</div>
-        </div>
-        <div id="musicSlot"></div>
-      </div>
+async function main(){
+  const slug=pathSlug();
+  const token=qs('token')||'';
+  if(!token){
+    q('#root').innerHTML=`<div class="container"><div class="card"><div class="p"><div class="h2">Builder</div><div class="err" style="margin-top:8px">Token yok. Bu sayfa ödeme sonrası verilen link ile açılır.</div></div></div></div>`;
+    return;
+  }
 
-      <div class="heroimg" style="aspect-ratio:16/9;margin-top:18px;border-radius:28px">
-        ${hero?`<img src="${esc(hero)}" alt="Hero"/>`:`<div class="muted" style="padding:18px">Hero foto yükleyin</div>`}
-      </div>
+  let site=null;
+  try{ site=await getJSON(`/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`); }catch{}
 
-      <div class="tcard" style="margin-top:16px;border-radius:28px">
-        <div style="font-weight:800">Hikaye</div>
-        <div style="margin-top:8px;white-space:pre-wrap;line-height:1.6;font-size:14px">
-          ${esc(site.content.story||'Buraya hikayenizi yazın…')}
-        </div>
-      </div>
+  q('#slugText').textContent=slug;
+  q('#previewLink').href=`/${slug}?token=${encodeURIComponent(token)}`;
+  q('#previewLink').textContent=`Önizleme: /${slug}?token=...`;
 
-      <div style="margin-top:18px">
-        <div style="font-weight:800;margin-bottom:10px">Fotoğraflar</div>
-        <div style="display:flex;gap:10px;overflow:auto;padding-bottom:6px">
-          ${strip || `<div class="tcard muted" style="width:100%;text-align:center">Fotoğraf yükledikçe burada görünecek.</div>`}
-        </div>
-        <div class="small muted" style="text-align:center;margin-top:16px">
-          💗 Siz de sayfanızı oluşturun — <b>askimiz.com</b>
-        </div>
-      </div>
-    </div>
-  </div>`;
+  if(site?.content){
+    q('#names1').value = site.content.names1 || q('#names1').value;
+    q('#names2').value = site.content.names2 || q('#names2').value;
+    q('#date').value   = site.content.date || q('#date').value;
+    q('#story').value  = site.content.story || '';
+    q('#outro').value  = site.content.outro || '';
+  }
+
+  const allowMusic = site ? (site.plan==='premium' || site.addons?.music===true) : true;
+  const allowLock  = site ? (site.plan==='premium' || site.addons?.lock===true) : true;
+
+  if(site?.photoLimit){
+    const note=document.createElement('div');
+    note.className='small muted';
+    note.style.marginTop='6px';
+    note.textContent=`Foto limitin: ${site.photoLimit}`;
+    const photoBox=q('#photoBox');
+    photoBox.insertBefore(note, photoBox.querySelector('input'));
+  }
+
+  if(!allowMusic){
+    const box=q('#musicBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🎵 Müzik Yükle</div><div class="small muted" style="margin-top:6px">Bu paket için müzik eklentisi alınmamış.</div>`;
+  }
+  if(!allowLock){
+    const box=q('#lockBox');
+    box.style.opacity='0.6';
+    box.innerHTML=`<div style="font-weight:800">🔒 Kilit Ekranı</div><div class="small muted" style="margin-top:6px">Bu paket için kilit eklentisi alınmamış.</div>`;
+  }
+
+  let highlights = (site?.content?.highlights || []).map(x=>({title:x.title||'', text:x.text||''}));
+  let chapters   = (site?.content?.chapters || []).map(x=>({title:x.title||'', text:x.text||'', photoUrl:x.photoUrl||''}));
+  let timeline   = (site?.content?.timeline || []).map(x=>({title:x.title||'', date:x.date||'', text:x.text||'', photoUrl:x.photoUrl||''}));
+  let videoUrl   = site?.content?.videoUrl || '';
+
+  const advBox = q('#advancedBox');
+  const fields = q('#premiumFields');
+
+  const isPremium = site?.plan === 'premium';
+  const canVideo = isPremium || (site?.addons?.video===true);
+  const showTimeline = isPremium || (site?.templateId==='t3');
+
+  if(isPremium || canVideo || showTimeline){
+    advBox.style.display='block';
+    fields.innerHTML='';
+
+    if(isPremium){
+      const hDiv=document.createElement('div'); fields.appendChild(hDiv);
+      renderRepeater(hDiv, highlights, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'}
+      ], 'Öne Çıkan Anlar');
+
+      const cDiv=document.createElement('div'); fields.appendChild(cDiv);
+      renderRepeater(cDiv, chapters, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'},
+        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
+      ], 'Chapters (Cinematic)');
+
+      const vBox=document.createElement('div');
+      vBox.className='tcard'; vBox.style.borderRadius='18px';
+      vBox.innerHTML=`
+        <b>🎬 Video URL</b>
+        <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
+        <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
+      `;
+      fields.appendChild(vBox);
+
+      const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+      renderRepeater(tDiv, timeline, [
+        {k:'title', label:'Başlık', type:'text'},
+        {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
+        {k:'text', label:'Metin', type:'textarea'},
+        {k:'photoUrl', label:'Foto URL (ops.)', type:'text'}
+      ], 'Timeline (Deluxe)');
+    } else {
+      if(canVideo){
+        const vBox=document.createElement('div');
+        vBox.className='tcard'; vBox.style.borderRadius='18px';
+        vBox.innerHTML=`
+          <b>🎬 Video URL (Eklenti)</b>
+          <div class="small muted" style="margin-top:6px">YouTube embed örn: https://www.youtube.com/embed/VIDEO_ID</div>
+          <input id="videoUrl" class="input" value="${videoUrl}" placeholder="https://www.youtube.com/embed/..." style="margin-top:10px"/>
+        `;
+        fields.appendChild(vBox);
+      }
+      if(showTimeline){
+        const tDiv=document.createElement('div'); fields.appendChild(tDiv);
+        renderRepeater(tDiv, timeline, [
+          {k:'title', label:'Başlık', type:'text'},
+          {k:'date', label:'Tarih (YYYY-MM-DD)', type:'text'},
+          {k:'text', label:'Metin', type:'textarea'}
+        ], 'Timeline');
+      }
+    }
+  }
+
+  q('#saveBtn').addEventListener('click', async ()=>{
+    try{
+      const payload = {
+        slug, token,
+        content:{
+          names1:q('#names1')?.value||'',
+          names2:q('#names2')?.value||'',
+          date:q('#date')?.value||'',
+          story:q('#story')?.value||'',
+          outro:q('#outro')?.value||'',
+          highlights,
+          chapters,
+          videoUrl: q('#videoUrl') ? q('#videoUrl').value : (videoUrl||''),
+          timeline
+        },
+        lockPin: allowLock ? (q('#lockpin')?.value||null) : null
+      };
+      await postJSON('/api/builder-save', payload);
+      alert('Kaydedildi ✅');
+    }catch(e){ alert(e.message||'Kaydetme hatası'); }
+  });
+
+  q('#publishBtn').addEventListener('click', async ()=>{
+    try{
+      await postJSON('/api/builder-publish',{slug,token});
+      alert('Yayınlandı ✅');
+      window.location.href=`/${slug}`;
+    }catch(e){ alert(e.message||'Yayınlama hatası'); }
+  });
+
+  q('#photoInput').addEventListener('change', async (e)=>{
+    const f=e.target.files?.[0]; e.target.value='';
+    if(!f) return;
+    try{
+      const url=await uploadRaw(f,'photo',slug,token);
+      const img=document.createElement('img'); img.src=url;
+      q('#photoGrid').appendChild(img);
+    }catch(err){ alert(err.message||'Foto upload hata'); }
+  });
+
+  q('#musicInput')?.addEventListener('change', async (e)=>{
+    const f=e.target.files?.[0]; e.target.value='';
+    if(!f) return;
+    if(!allowMusic) return alert('Bu paket için müzik eklentisi yok.');
+    try{
+      await uploadRaw(f,'music',slug,token);
+      q('#musicStatus').textContent='Müzik yüklendi ✅';
+      q('#musicStatus').className='ok';
+    }catch(err){ alert(err.message||'Müzik upload hata'); }
+  });
 }
 
-export function renderT3(site){
-  const hero=site.photos?.[0]||'';
-  const photos=(site.photos||[]).slice(0,site.photoLimit||3);
-  const tl=(site.content.timeline||[]).slice(0,10);
-  const timelineHTML=tl.length?`
-    <div class="timeline">
-      ${tl.map(item=>`
-        <div class="tcard">
-          <div style="display:flex;justify-content:space-between;gap:12px">
-            <div style="font-weight:900">${esc(item.title||'Başlık')}</div>
-            <div class="small muted">${item.date?fmtDate(item.date):''}</div>
-          </div>
-          ${item.text?`<div style="margin-top:8px;font-size:14px;line-height:1.6">${esc(item.text)}</div>`:''}
-          ${item.photoUrl?`<div class="heroimg" style="aspect-ratio:16/9;margin-top:10px;border-radius:18px"><img src="${esc(item.photoUrl)}" alt="Timeline"/></div>`:''}
-        </div>`).join('')}
-    </div>`:`<div class="tcard muted" style="text-align:center">Timeline maddeleri ekledikçe burada görünecek.</div>`;
-
-  return `
-  <div class="template-wrap" style="background:linear-gradient(to bottom,#eef2ff,#fff,#fff)">
-    <div class="tbox">
-      <div class="hero-card">
-        <div class="row" style="align-items:flex-start;justify-content:space-between">
-          <div>
-            <div class="small muted" style="letter-spacing:.18em;text-transform:uppercase">Memory Timeline</div>
-            <div style="font-size:30px;font-weight:900;margin-top:6px">
-              ${esc(site.content.names1||'İsim 1')} <span style="color:#6366f1">∞</span> ${esc(site.content.names2||'İsim 2')}
-            </div>
-            <div class="muted" style="margin-top:6px;font-size:14px">
-              ${site.content.date?`Tanışma: ${fmtDate(site.content.date)}`:'Tarih ekle'}
-            </div>
-          </div>
-          <div id="musicSlot"></div>
-        </div>
-
-        <div class="grid2" style="margin-top:16px">
-          <div class="heroimg">
-            ${hero?`<img src="${esc(hero)}" alt="Hero"/>`:`<div class="muted" style="padding:18px">Hero foto yükleyin</div>`}
-          </div>
-          <div class="tcard" style="border-radius:26px">
-            <div style="font-weight:800">Kısa Not</div>
-            <div style="margin-top:8px;white-space:pre-wrap;line-height:1.6;font-size:14px">
-              ${esc(site.content.story||"Bu şablonda ağırlık timeline'da. Buraya kısa bir not yazabilirsin.")}
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:20px">
-          <div style="font-weight:900;margin-bottom:10px">Timeline</div>
-          ${timelineHTML}
-        </div>
-
-        <div style="margin-top:20px">
-          <div style="font-weight:900;margin-bottom:10px">Galeri</div>
-          ${galleryHTML(photos)}
-          <div class="small muted" style="text-align:center;margin-top:16px">
-            💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-export function renderTemplate(templateId,site){
-  if(templateId==='t2') return renderT2(site);
-  if(templateId==='t3') return renderT3(site);
-  return renderT1(site);
-}
+document.addEventListener('DOMContentLoaded', main);

@@ -3,90 +3,50 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Sayfanı Oluştur — askimiz.com</title>
+  <title>Demo s1 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
-  <link rel="stylesheet" href="/assets/css/create.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
+  
 </head>
 <body>
-  <header class="header">
-    <div class="container">
-      <a class="brand" href="/">
-        <div class="logo"></div>
-        <div class="t"><b>askimiz.com</b><span>çiftlere özel mini site</span></div>
-      </a>
-      <nav class="nav">
-        <a class="btn" href="/templates">Şablonlar</a>
-        <a class="btn primary" href="/create">Sayfanı Oluştur</a>
-      </nav>
-    </div>
-  </header>
-  <main class="page">
-  <div class="container">
-  <h1 class="h2">Sayfanı Oluştur</h1>
-  <p class="muted" style="margin-top:8px">Paket + şablon + ek özellikleri seç.</p>
+  <div id="root"></div>
+  <script type="module">
+    import { renderTemplate } from '/assets/js/templates.js';
+    const site = {
+      slug:'demo',
+      plan:'starter',
+      templateId:'s1',
+      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
+      photoLimit: 25,
+      musicUrl: null,
+      lockEnabled: false,
+      content: {
+        names1: 'Batıkan',
+        names2: 'Sezin',
+        date: '2025-07-17',
+        story: 'Bu bir demo. Premium ve Standart görünüm farkını göstermek için hazırlanmıştır.',
+        outro: 'Sonsuzluğumuzun bir parçası…',
+        highlights: [
+          { title:'İlk mesaj', text:'O anı hiç unutmuyorum…' },
+          { title:'İlk buluşma', text:'Heyecan ve mutluluk.' },
+          { title:'İlk tatil', text:'Birlikte her şey daha güzel.' }
+        ],
+        chapters: [
+          { title:'Başlangıç', text:'Her şey burada başladı.' },
+          { title:'Güçlendik', text:'Daha da büyüdük.' },
+          { title:'Bugün', text:'Sonsuzluğa…' }
+        ],
+        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        timeline: [
+          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
+          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
+          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
+        ]
+      },
+      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-s1-${i}/900/900`)
+    };
+    document.getElementById('root').innerHTML = renderTemplate('s1', site);
 
-  <div class="grid two" style="margin-top:14px">
-    <div class="card"><div class="p">
-      <b>1) URL Seç</b>
-      <div class="row" style="margin-top:10px">
-        <input id="slug" class="input" placeholder="batikan.sezin" value="batikan.sezin"/>
-        <button id="btnSlug" class="btn" type="button">Kontrol Et</button>
-      </div>
-      <div class="small" style="margin-top:10px"><span class="muted">Oluşan URL:</span> <span id="slugPreview" class="kbd">askimiz.com/batikan.sezin</span></div>
-      <div id="slugMsg" class="small" style="margin-top:8px"></div>
-
-      <hr class="sep"/>
-
-      <b>2) Paket Seç</b>
-      <div class="grid" style="margin-top:10px">
-        <label class="radio"><input type="radio" name="plan" value="starter"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Giriş</b><b>999 TL</b></div><div class="small muted" style="margin-top:4px">Şablon seçimi yok (t1 sabit)</div></div></label>
-        <label class="radio" style="border-color:#111"><input type="radio" name="plan" value="standard"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Standart ⭐</b><b>1499 TL</b></div><div class="small muted" style="margin-top:4px">Şablon seçimi aktif</div></div></label>
-        <label class="radio"><input type="radio" name="plan" value="premium"/><div style="flex:1"><div style="display:flex;justify-content:space-between"><b>Premium 👑</b><b>1999 TL</b></div><div class="small muted" style="margin-top:4px">Tüm opsiyonlar dahil</div></div></label>
-      </div>
-
-      <hr class="sep"/>
-
-      <b>3) Şablon Seç</b>
-<div id="tplNote" class="notice" style="margin-top:10px; display:none">
-  Giriş paketinde şablon seçimi yok (Starter sabit şablon).
-</div>
-<div id="templateOptions" class="grid" style="margin-top:10px"></div>
-
-<hr class="sep"/>
-
-
-      <b>4) Ek Özellikler</b>
-      <div class="grid" style="margin-top:10px">
-        <label class="check"><input id="ad_music" type="checkbox"/><div><b>🎵 Sayfada müzik</b> <span class="muted">(99 TL)</span></div></label>
-        <label class="check"><input id="ad_lock" type="checkbox"/><div><b>🔒 Kilit ekranı</b> <span class="muted">(49 TL)</span></div></label>
-        <div id="addonsDynamic"></div>
-      </div>
-    </div></div>
-
-    <div class="card"><div class="p">
-      <b>Özet</b>
-      <div style="margin-top:12px;border:1px solid var(--border);border-radius:18px;padding:14px">
-        <div class="small muted">Toplam</div>
-        <div id="total" class="total">1499 TL</div>
-      </div>
-
-      <div id="suggestion" class="notice" style="margin-top:12px;display:none">
-        <b>STANDART paket daha mantıklı</b>
-        <div class="small" style="margin-top:6px">Eklerle birlikte Standart paket daha avantajlı.</div>
-      </div>
-
-      <button id="btnPay" class="btn primary" style="width:100%;margin-top:12px" type="button">Ödemeye Geç (DEV)</button>
-    </div></div>
-  </div>
-</div>
-
-  </main>
-  <footer class="footer">
-    <div class="container">
-      <div>© 2026 askimiz.com</div>
-      <div>💗 Siz de sevginiz için bir sayfa oluşturun — <b>askimiz.com</b></div>
-    </div>
-  </footer>
-  <script type="module" src="/assets/js/create.js"></script>
+  </script>
 </body>
 </html>
