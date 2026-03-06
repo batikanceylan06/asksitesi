@@ -1,46 +1,36 @@
-import { pathSlug, qs } from './slug-util.js';
-import { getJSON } from './api.js';
-import { renderTemplate } from './templates.js';
-import { mountMusicPlayer } from './addons-music.js';
-import { mountLockIfNeeded } from './addons-lock.js';
+import { postJSON } from './api.js';
+export function mountLockIfNeeded(enabled, verifyUrl){
+  if(!enabled) return;
+  const key='askimiz:unlock:'+verifyUrl;
+  if(sessionStorage.getItem(key)==='1') return;
 
-function ensureCss(href){
-  if(document.querySelector(`link[href="${href}"]`)) return;
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = href;
-  document.head.appendChild(link);
+  const wrap=document.createElement('div');
+  wrap.className='lock-backdrop';
+  wrap.innerHTML=`
+    <div class="lock-modal">
+      <div style="font-weight:800;font-size:18px">🔒 Bu sayfa kilitli</div>
+      <div class="muted" style="margin-top:6px;font-size:14px">PIN girerek devam edebilirsin.</div>
+      <div style="margin-top:14px;display:grid;gap:10px">
+        <input class="input" inputmode="numeric" placeholder="PIN"/>
+        <div class="err small" style="display:none"></div>
+        <button class="btn primary" type="button">Aç</button>
+      </div>
+    </div>`;
+  document.body.appendChild(wrap);
+
+  const pin=wrap.querySelector('input');
+  const err=wrap.querySelector('.err');
+  const btn=wrap.querySelector('button');
+
+  btn.addEventListener('click', async ()=>{
+    err.style.display='none';
+    try{
+      await postJSON(verifyUrl,{pin:pin.value});
+      sessionStorage.setItem(key,'1');
+      wrap.remove();
+    }catch(e){
+      err.textContent=e.message||'PIN yanlış';
+      err.style.display='block';
+    }
+  });
 }
-
-async function main(){
-  const slug = pathSlug();
-  const token = qs('token');
-  const url = token ? `/api/site?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}` : `/api/site?slug=${encodeURIComponent(slug)}`;
-  const data = await getJSON(url);
-
-  if(data.plan === 'premium') ensureCss('/assets/css/skin-premium.css');
-  if(data.plan === 'standard') ensureCss('/assets/css/skin-standard.css');
-
-  document.getElementById('root').innerHTML = renderTemplate(data.templateId, data);
-
-  const slot = document.querySelector('#musicSlot');
-  if(data.addons?.music && data.musicUrl) mountMusicPlayer(slot, data.musicUrl);
-  if(data.lockEnabled) mountLockIfNeeded(true, `/api/lock-verify?slug=${encodeURIComponent(slug)}`);
-
-  if(data.plan === 'premium'){
-    const mod = await import('/assets/js/effects-premium.js');
-    mod.initPremiumEffects(data);
-  } else if(data.plan === 'standard'){
-    const mod = await import('/assets/js/effects-standard.js');
-    mod.initStandardEffects();
-  }
-}
-
-main().catch((e)=>{
-  document.getElementById('root').innerHTML = `
-    <div class="container"><div class="card"><div class="p">
-      <div class="h2">Sayfa bulunamadı</div>
-      <div class="muted" style="margin-top:8px">${(e&&e.message)?e.message:'Hata'}</div>
-      <a class="btn" style="margin-top:12px" href="/">Ana sayfa</a>
-    </div></div></div>`;
-});

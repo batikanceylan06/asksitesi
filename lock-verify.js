@@ -1,56 +1,53 @@
-{
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/create",
-      "dest": "/create.html"
-    },
-    {
-      "src": "/templates",
-      "dest": "/templates.html"
-    },
-    {
-      "src": "/demo/s1",
-      "dest": "/demo/s1.html"
-    },
-    {
-      "src": "/demo/t1",
-      "dest": "/demo/t1.html"
-    },
-    {
-      "src": "/demo/t2",
-      "dest": "/demo/t2.html"
-    },
-    {
-      "src": "/demo/t3",
-      "dest": "/demo/t3.html"
-    },
-    {
-      "src": "/demo/p1",
-      "dest": "/demo/p1.html"
-    },
-    {
-      "src": "/demo/p2",
-      "dest": "/demo/p2.html"
-    },
-    {
-      "src": "/demo/p3",
-      "dest": "/demo/p3.html"
-    },
-    {
-      "src": "/builder/(.*)",
-      "dest": "/builder.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/slug.html"
-    }
-  ],
-  "outputDirectory": "public"
-}
+const { sql } = require('@vercel/postgres');
+const { json, readBody, verifyBuilderToken, bcrypt } = require('./_util');
+
+module.exports = async (req, res) => {
+  if(req.method !== 'POST') return json(res, 405, { error:'Method not allowed' });
+
+  const raw = await readBody(req);
+  let body = {};
+  try{ body = JSON.parse(raw || '{}'); }catch{}
+
+  const slug = body.slug || '';
+  const token = body.token || '';
+  const content = body.content || {};
+  const lockPin = body.lockPin || null;
+
+  if(!slug || !token) return json(res, 401, { error:'Yetkisiz' });
+
+  const ok = await verifyBuilderToken(slug, token);
+  if(!ok) return json(res, 401, { error:'Token geçersiz' });
+
+  const { rows } = await sql`SELECT slug, plan, addons FROM sites WHERE slug=${slug} LIMIT 1;`;
+  if(!rows[0]) return json(res, 404, { error:'Site yok' });
+
+  const plan = rows[0].plan;
+  const addons = rows[0].addons || {};
+  const allowLock = (plan === 'premium') || (addons.lock === true);
+
+  const clean = {
+    names1: String(content.names1||''),
+    names2: String(content.names2||''),
+    date: String(content.date||''),
+    story: String(content.story||''),
+    outro: String(content.outro||''),
+    highlights: Array.isArray(content.highlights) ? content.highlights : [],
+    chapters: Array.isArray(content.chapters) ? content.chapters : [],
+    videoUrl: String(content.videoUrl||''),
+    timeline: Array.isArray(content.timeline) ? content.timeline : [],
+  };
+
+  await sql`
+    UPDATE sites SET content=${JSON.stringify(clean)}::jsonb, updated_at=now()
+    WHERE slug=${slug};
+  `;
+
+  if(allowLock && lockPin && String(lockPin).trim().length >= 3){
+    const hash = await bcrypt.hash(String(lockPin).trim(), 10);
+    await sql`UPDATE sites SET lock_pin_hash=${hash}, updated_at=now() WHERE slug=${slug};`;
+  }else{
+    await sql`UPDATE sites SET lock_pin_hash=NULL, updated_at=now() WHERE slug=${slug};`;
+  }
+
+  return json(res, 200, { ok:true });
+};

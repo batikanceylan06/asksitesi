@@ -1,18 +1,23 @@
-{
-  "name": "askimiz-static-vercel",
-  "private": true,
-  "version": "0.2.0",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo \"Static build: using public/\"",
-    "start": "node -e \"console.log('askimiz.com')\""
-  },
-  "dependencies": {
-    "@vercel/postgres": "^0.10.0",
-    "@vercel/blob": "^0.27.0",
-    "bcryptjs": "^2.4.3"
-  },
-  "engines": {
-    "node": "24.x"
+const { sql } = require('@vercel/postgres');
+const { normalizeSlug, isValidSlug, json, readBody } = require('./_util');
+
+module.exports = async (req, res) => {
+  if(req.method !== 'POST') return json(res, 405, { error:'Method not allowed' });
+
+  const raw = await readBody(req);
+  let body = {};
+  try{ body = JSON.parse(raw || '{}'); }catch{}
+  const slug = normalizeSlug(body.slug || '');
+  if(!isValidSlug(slug)) return json(res, 400, { error:'Slug geçersiz', available:false });
+
+  const { rows } = await sql`SELECT slug FROM sites WHERE slug=${slug} LIMIT 1;`;
+  if(rows.length === 0) return json(res, 200, { available:true });
+
+  let suggestion = '';
+  for(let i=1;i<=9;i++){
+    const s = `${slug}${i}`;
+    const { rows:r2 } = await sql`SELECT slug FROM sites WHERE slug=${s} LIMIT 1;`;
+    if(r2.length===0){ suggestion=s; break; }
   }
-}
+  return json(res, 200, { available:false, suggestion });
+};

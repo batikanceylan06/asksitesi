@@ -1,56 +1,25 @@
-{
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/create",
-      "dest": "/create.html"
-    },
-    {
-      "src": "/templates",
-      "dest": "/templates.html"
-    },
-    {
-      "src": "/demo/s1",
-      "dest": "/demo/s1.html"
-    },
-    {
-      "src": "/demo/t1",
-      "dest": "/demo/t1.html"
-    },
-    {
-      "src": "/demo/t2",
-      "dest": "/demo/t2.html"
-    },
-    {
-      "src": "/demo/t3",
-      "dest": "/demo/t3.html"
-    },
-    {
-      "src": "/demo/p1",
-      "dest": "/demo/p1.html"
-    },
-    {
-      "src": "/demo/p2",
-      "dest": "/demo/p2.html"
-    },
-    {
-      "src": "/demo/p3",
-      "dest": "/demo/p3.html"
-    },
-    {
-      "src": "/builder/(.*)",
-      "dest": "/builder.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/slug.html"
-    }
-  ],
-  "outputDirectory": "public"
-}
+# askimiz.com — Static HTML/CSS/JS + Vercel Functions + Vercel Postgres + Vercel Blob
+
+- Next.js yok.
+- Statik sayfalar root’ta.
+- Dinamik işler `api/` (Vercel Functions).
+
+## Kurulum
+1) Vercel’e deploy et
+2) Storage > Postgres + Blob ekle
+3) Postgres Query: `scripts/schema.sql`
+4) Local:
+   ```bash
+   vercel env pull .env.development.local
+   npm i
+   npx vercel dev
+   ```
+
+## Kurallar (v2)
+- Starter (999): şablon seçimi yok (t1 sabit).
+- Premium (1999): müzik + kilit + tema + animasyon + video dahil (ek ücret yok).
+
+## Test
+- /create → “Ödemeye Geç (DEV)” → builder linki açılır.
+- Builder’da foto/müzik yükle, kaydet, yayınla.
+- /{slug} açılır.

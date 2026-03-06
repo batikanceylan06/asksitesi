@@ -1,54 +1,45 @@
-<!doctype html>
-<html lang="tr">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Demo p1 — askimiz.com</title>
-  <link rel="stylesheet" href="/assets/css/base.css"/>
-  <link rel="stylesheet" href="/assets/css/template.css"/>
-  <link rel="stylesheet" href="/assets/css/skin-premium.css"/>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="module">
-    import { renderTemplate } from '/assets/js/templates.js';
-    const site = {
-      slug:'demo',
-      plan:'premium',
-      templateId:'p1',
-      addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
-      photoLimit: 25,
-      musicUrl: null,
-      lockEnabled: false,
-      content: {
-        names1: 'Batıkan',
-        names2: 'Sezin',
-        date: '2025-07-17',
-        story: 'Bu bir demo. Premium ve Standart görünüm farkını göstermek için hazırlanmıştır.',
-        outro: 'Sonsuzluğumuzun bir parçası…',
-        highlights: [
-          { title:'İlk mesaj', text:'O anı hiç unutmuyorum…' },
-          { title:'İlk buluşma', text:'Heyecan ve mutluluk.' },
-          { title:'İlk tatil', text:'Birlikte her şey daha güzel.' }
-        ],
-        chapters: [
-          { title:'Başlangıç', text:'Her şey burada başladı.' },
-          { title:'Güçlendik', text:'Daha da büyüdük.' },
-          { title:'Bugün', text:'Sonsuzluğa…' }
-        ],
-        videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-        timeline: [
-          { title:'Tanıştık', date:'2024-01-10', text:'Her şey burada başladı.' },
-          { title:'İlk Buluşma', date:'2024-02-02', text:'Heyecan ve mutluluk.' },
-          { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
-        ]
-      },
-      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-p1-${i}/900/900`)
-    };
-    document.getElementById('root').innerHTML = renderTemplate('p1', site);
-    const mod = await import('/assets/js/effects-premium.js');
-    mod.initPremiumEffects(site);
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-  </script>
-</body>
-</html>
+CREATE TABLE IF NOT EXISTS sites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  slug text UNIQUE NOT NULL,
+  plan text NOT NULL,
+  template_id text NOT NULL,
+  addons jsonb NOT NULL DEFAULT '{}'::jsonb,
+  content jsonb NOT NULL DEFAULT '{}'::jsonb,
+  photo_limit int NOT NULL DEFAULT 3,
+  music_url text,
+  lock_pin_hash text,
+  status text NOT NULL DEFAULT 'draft',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
+  type text NOT NULL CHECK (type IN ('photo','music')),
+  url text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text NOT NULL,
+  plan text NOT NULL,
+  template_id text NOT NULL,
+  addons jsonb NOT NULL DEFAULT '{}'::jsonb,
+  total_price int NOT NULL,
+  payment_status text NOT NULL DEFAULT 'pending',
+  provider_ref text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS builder_tokens (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  site_slug text UNIQUE NOT NULL REFERENCES sites(slug) ON DELETE CASCADE,
+  token_hash text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

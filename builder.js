@@ -1,36 +1,24 @@
-import { postJSON } from './api.js';
-export function mountLockIfNeeded(enabled, verifyUrl){
-  if(!enabled) return;
-  const key='askimiz:unlock:'+verifyUrl;
-  if(sessionStorage.getItem(key)==='1') return;
+export const PLAN_PRICE={starter:999,standard:1499,premium:1999};
+export const ADDON_PRICE={music:99,lock:49,theme:149,photoPack_to10:269,photoPack_to25:399,animations:199,video:299};
 
-  const wrap=document.createElement('div');
-  wrap.className='lock-backdrop';
-  wrap.innerHTML=`
-    <div class="lock-modal">
-      <div style="font-weight:800;font-size:18px">🔒 Bu sayfa kilitli</div>
-      <div class="muted" style="margin-top:6px;font-size:14px">PIN girerek devam edebilirsin.</div>
-      <div style="margin-top:14px;display:grid;gap:10px">
-        <input class="input" inputmode="numeric" placeholder="PIN"/>
-        <div class="err small" style="display:none"></div>
-        <button class="btn primary" type="button">Aç</button>
-      </div>
-    </div>`;
-  document.body.appendChild(wrap);
+export function computeTotal(plan,addons){
+  // Premium pakette tüm opsiyonlar dahildir.
+  if(plan==='premium') return PLAN_PRICE.premium;
 
-  const pin=wrap.querySelector('input');
-  const err=wrap.querySelector('.err');
-  const btn=wrap.querySelector('button');
+  let total=PLAN_PRICE[plan]||0;
+  if(addons.music) total+=ADDON_PRICE.music;
+  if(addons.lock) total+=ADDON_PRICE.lock;
+  if(plan==='starter' && addons.theme) total+=ADDON_PRICE.theme;
+  if(addons.photoPack==='to10') total+=ADDON_PRICE.photoPack_to10;
+  if(addons.photoPack==='to25') total+=ADDON_PRICE.photoPack_to25;
+  if(addons.animations) total+=ADDON_PRICE.animations;
+  if(plan!=='premium' && addons.video) total+=ADDON_PRICE.video;
+  return total;
+}
 
-  btn.addEventListener('click', async ()=>{
-    err.style.display='none';
-    try{
-      await postJSON(verifyUrl,{pin:pin.value});
-      sessionStorage.setItem(key,'1');
-      wrap.remove();
-    }catch(e){
-      err.textContent=e.message||'PIN yanlış';
-      err.style.display='block';
-    }
-  });
+export function upgradeSuggestion(plan,addons){
+  const total=computeTotal(plan,addons);
+  if(plan==='starter' && total>=PLAN_PRICE.standard) return {to:'standard',reason:'Eklerle birlikte Standart paket daha avantajlı.'};
+  if(plan==='standard' && total>=PLAN_PRICE.premium) return {to:'premium',reason:'Eklerle birlikte Premium paket daha avantajlı.'};
+  return null;
 }

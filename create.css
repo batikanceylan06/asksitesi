@@ -1,42 +1,15 @@
-:root{
-  --bg:#fff; --text:#111; --muted:#666; --border:#e6e6e6; --card:#fff;
-  --shadow: 0 10px 30px rgba(0,0,0,.08);
-  --radius: 18px;
-}
-*{box-sizing:border-box}
-html,body{margin:0;font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
-body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans","Helvetica Neue",sans-serif;background:var(--bg);color:var(--text)}
-a{color:inherit;text-decoration:none}
-.container{max-width:1100px;margin:0 auto;padding:24px}
-.header{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);background:rgba(255,255,255,.8);border-bottom:1px solid var(--border)}
-.header .container{display:flex;align-items:center;justify-content:space-between;padding:14px 24px}
-.brand{display:flex;gap:10px;align-items:center}
-.logo{width:34px;height:34px;border-radius:14px;background:#111}
-.brand .t{line-height:1.1}
-.brand .t b{display:block;font-size:14px}
-.brand .t span{display:block;font-size:12px;color:var(--muted)}
-.nav{display:flex;gap:14px;align-items:center}
-.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:14px;border:1px solid var(--border);font-weight:600;font-size:14px;background:#fff}
-.btn.primary{background:#111;color:#fff;border-color:#111}
-.btn:hover{filter:brightness(.98)}
-.grid{display:grid;gap:16px}
-.card{border:1px solid var(--border);border-radius:var(--radius);background:var(--card);box-shadow:var(--shadow)}
-.card .p{padding:16px}
-.muted{color:var(--muted)}
-.h1{font-size:38px;letter-spacing:-.02em;margin:0}
-.h2{font-size:22px;margin:0}
-.small{font-size:12px}
-.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;padding:2px 6px;border-radius:10px;border:1px solid var(--border);background:#fafafa}
-hr.sep{border:0;border-top:1px solid var(--border);margin:18px 0}
-.footer{border-top:1px solid var(--border);padding:26px 0;margin-top:auto}
-.footer .container{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;color:var(--muted);font-size:13px}
-.input,select,textarea{width:100%;padding:10px 12px;border-radius:14px;border:1px solid var(--border);font-size:14px;outline:none}
-textarea{min-height:120px;resize:vertical}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.row>*{flex:1}
-.badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:12px}
-.notice{border:1px solid #f0d07a;background:#fff7da;color:#8a5b00;border-radius:16px;padding:12px}
-.ok{color:#0f7a3b}
-.err{color:#b00020}
-
-.page{flex:1}
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>askimiz.com</title>
+  <link rel="stylesheet" href="/assets/css/base.css"/>
+  <link rel="stylesheet" href="/assets/css/app.css"/>
+  <link rel="stylesheet" href="/assets/css/template.css"/>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/assets/js/slug.js"></script>
+</body>
+</html>

@@ -1,79 +1,157 @@
-/* Shared app look for all first-party pages */
+/* Premium skin: glass + glow + better typography */
 :root{
-  --glass: rgba(255,255,255,.82);
-  --glass2: rgba(255,255,255,.90);
+  --premium-bg1:#0b1020;
+  --premium-bg2:#0a0f1c;
+  --premium-accent:#d7b66a; /* soft gold */
+  --premium-accent2:#a78bfa; /* violet */
 }
 
-body{
+.plan-premium{
   background:
-    radial-gradient(900px 520px at 15% 5%, rgba(251,113,133,.18), transparent 60%),
-    radial-gradient(900px 520px at 85% 15%, rgba(139,92,246,.16), transparent 60%),
-    radial-gradient(1100px 650px at 50% 110%, rgba(34,211,238,.10), transparent 62%),
-    linear-gradient(to bottom, #ffffff, #ffffff);
+    radial-gradient(900px 500px at 20% 10%, rgba(215,182,106,.18), transparent 60%),
+    radial-gradient(900px 500px at 80% 20%, rgba(167,139,250,.18), transparent 60%),
+    radial-gradient(1200px 700px at 50% 110%, rgba(255,255,255,.08), transparent 55%),
+    linear-gradient(to bottom, var(--premium-bg1), var(--premium-bg2));
+  color:#f4f4f5;
 }
 
-/* header/footer glass */
-.header{
-  background: rgba(255,255,255,.86);
-  backdrop-filter: blur(12px);
+.plan-premium .hero-card{
+  border-color: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
 }
-.footer{
-  background: rgba(255,255,255,.72);
+
+.plan-premium .tcard{
+  border-color: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+}
+
+.plan-premium .muted{ color: rgba(244,244,245,.72); }
+.plan-premium .kbd{ background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.16); color:#f4f4f5; }
+.plan-premium .btn{ background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16); color:#f4f4f5; }
+.plan-premium .btn.primary{
+  background: linear-gradient(135deg, rgba(215,182,106,.95), rgba(167,139,250,.88));
+  border-color: transparent;
+  color:#111;
+}
+.plan-premium .music-btn{
+  border-color: rgba(255,255,255,.16);
+  background: rgba(255,255,255,.08);
+  color:#f4f4f5;
+}
+
+/* reveal */
+.reveal{
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+.reveal.is-visible{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* lightbox */
+.lb-backdrop{
+  position:fixed; inset:0; z-index:99999;
+  background: rgba(0,0,0,.72);
   backdrop-filter: blur(10px);
+  display:flex; align-items:center; justify-content:center;
+  padding:18px;
 }
-
-/* page head card */
-.pagehead{
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: var(--glass);
-  box-shadow: 0 24px 70px rgba(0,0,0,.10);
-  padding: 18px;
-  position: relative;
+.lb-modal{
+  width:min(1000px, 100%);
+  border-radius: 24px;
   overflow:hidden;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  box-shadow: 0 30px 90px rgba(0,0,0,.45);
 }
-.pagehead:before{
-  content:"";
-  position:absolute; inset:-2px;
-  background:
-    radial-gradient(520px 260px at 18% 0%, rgba(251,113,133,.22), transparent 60%),
-    radial-gradient(520px 260px at 85% 18%, rgba(139,92,246,.18), transparent 62%),
-    radial-gradient(620px 320px at 50% 120%, rgba(34,211,238,.12), transparent 60%);
-  opacity:.8;
-  pointer-events:none;
+.lb-top{
+  display:flex; gap:10px; align-items:center; justify-content:space-between;
+  padding:10px 12px;
+  background: rgba(0,0,0,.25);
 }
-.pagehead > *{ position:relative; }
-
-.pagehead .title{
-  font-size: 28px;
-  font-weight: 980;
-  letter-spacing: -.02em;
-  margin: 0;
-}
-.pagehead .desc{
-  color: var(--muted);
-  margin-top: 8px;
-  line-height: 1.6;
-}
-
-.section-card{
-  border:1px solid var(--border);
-  border-radius: 26px;
-  background: var(--glass2);
-  box-shadow: 0 18px 55px rgba(0,0,0,.08);
-}
-
-.badge{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
+.lb-top .lb-title{ font-weight:800; font-size:13px; color:#f4f4f5; }
+.lb-actions{ display:flex; gap:8px; }
+.lb-btn{
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.08);
+  color:#f4f4f5;
+  border-radius: 14px;
   padding:8px 10px;
-  border-radius:999px;
-  border:1px solid var(--border);
-  background: rgba(255,255,255,.75);
-  font-weight: 800;
-  font-size: 12px;
+  font-weight:800;
+  font-size:12px;
+}
+.lb-img{
+  width:100%; height:min(70vh, 680px);
+  background:#0b1020;
+  display:flex; align-items:center; justify-content:center;
+}
+.lb-img img{ max-width:100%; max-height:100%; object-fit:contain; }
+
+/* P2 cinematic vibe */
+.plan-premium.p2{
+  background:
+    radial-gradient(1000px 600px at 50% 0%, rgba(255,255,255,.10), transparent 60%),
+    radial-gradient(900px 500px at 20% 20%, rgba(215,182,106,.14), transparent 60%),
+    linear-gradient(to bottom, #070810, #0b1020);
+}
+.film-grain:before{
+  content:"";
+  position:absolute; inset:0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.23'/%3E%3C/svg%3E");
+  opacity:.14;
+  pointer-events:none;
+  mix-blend-mode: overlay;
 }
 
-.cards3{ grid-template-columns: repeat(3,1fr); }
-@media (max-width:900px){ .cards3{ grid-template-columns:1fr; } }
+/* P3 timeline line */
+.tline{
+  position:relative;
+  padding-left:18px;
+}
+.tline:before{
+  content:"";
+  position:absolute;
+  left:6px; top:6px; bottom:6px;
+  width:2px;
+  background: rgba(255,255,255,.14);
+  border-radius:999px;
+}
+.tdot{
+  width:10px; height:10px; border-radius:999px;
+  background: rgba(215,182,106,.95);
+  box-shadow: 0 0 18px rgba(215,182,106,.30);
+  margin-top:4px;
+}
+
+/* Counter blocks (P3) */
+.counter-grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap:10px;
+  margin-top:12px;
+}
+@media (max-width:720px){
+  .counter-grid{ grid-template-columns: repeat(2,1fr); }
+}
+.counter-card{
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  border-radius:18px;
+  padding:12px;
+  text-align:center;
+}
+.counter-card .n{
+  font-size:28px;
+  font-weight:980;
+  letter-spacing:-.02em;
+}
+.counter-card .l{
+  margin-top:4px;
+  font-size:12px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color: rgba(244,244,245,.72);
+}
