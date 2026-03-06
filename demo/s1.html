@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Demo t2 — askimiz.com</title>
+  <title>Demo s1 — askimiz.com</title>
   <link rel="stylesheet" href="/assets/css/base.css"/>
   <link rel="stylesheet" href="/assets/css/template.css"/>
   
@@ -14,8 +14,8 @@
     import { renderTemplate } from '/assets/js/templates.js';
     const site = {
       slug:'demo',
-      plan:'standard',
-      templateId:'t2',
+      plan:'starter',
+      templateId:'s1',
       addons: { music:true, lock:true, animations:true, video:true, theme:true, photoPack:null },
       photoLimit: 25,
       musicUrl: null,
@@ -43,9 +43,9 @@
           { title:'Bugün', date:'2026-03-05', text:'Daha da güçlüyüz.' }
         ]
       },
-      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-t2-${i}/900/900`)
+      photos: Array.from({length: 12}).map((_,i)=>`https://picsum.photos/seed/askimiz-s1-${i}/900/900`)
     };
-    document.getElementById('root').innerHTML = renderTemplate('t2', site);
+    document.getElementById('root').innerHTML = renderTemplate('s1', site);
 
   </script>
 </body>

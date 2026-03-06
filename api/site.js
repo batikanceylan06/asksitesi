@@ -26,7 +26,6 @@ module.exports = async (req, res) => {
     if(!ok) return json(res, 404, { error:'Sayfa bulunamadı' });
   }
 
-  // effective addons
   let addonsOut = site.addons || {};
   if(site.plan === 'premium'){
     addonsOut = Object.assign({}, addonsOut, { music:true, lock:true, theme:true, animations:true, video:true, photoPack:null });

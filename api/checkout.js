@@ -1,6 +1,12 @@
 const { sql } = require('@vercel/postgres');
 const { normalizeSlug, isValidSlug, json, readBody, randomToken, sha256, computeTotal, computePhotoLimit } = require('./_util');
 
+const SETS = {
+  starter: new Set(['s1']),
+  standard: new Set(['t1','t2','t3']),
+  premium: new Set(['p1','p2','p3']),
+};
+
 module.exports = async (req, res) => {
   if(req.method !== 'POST') return json(res, 405, { error:'Method not allowed' });
 
@@ -15,15 +21,18 @@ module.exports = async (req, res) => {
 
   if(!isValidSlug(slug)) return json(res, 400, { error:'Slug geçersiz' });
   if(!['starter','standard','premium'].includes(plan)) return json(res, 400, { error:'Plan geçersiz' });
-  if(!['t1','t2','t3'].includes(templateId)) return json(res, 400, { error:'Şablon geçersiz' });
 
-  // Server-side rules
   let tpl = templateId;
-  let addonsFixed = addons;
 
   if(plan === 'starter'){
-    tpl = 't1'; // no template choice
+    tpl = 's1';
+  } else {
+    if(!SETS[plan].has(tpl)){
+      tpl = (plan === 'premium') ? 'p1' : 't1';
+    }
   }
+
+  let addonsFixed = addons;
   if(plan === 'premium'){
     addonsFixed = Object.assign({}, addons, { music:true, lock:true, theme:true, animations:true, video:true, photoPack:null });
   }
@@ -36,7 +45,17 @@ module.exports = async (req, res) => {
     VALUES (
       ${slug}, ${plan}, ${tpl},
       ${JSON.stringify(addonsFixed)}::jsonb,
-      ${JSON.stringify({names1:'İsim 1',names2:'İsim 2',date:'',story:'',outro:'',timeline:[]})}::jsonb,
+      ${JSON.stringify({
+        names1:'İsim 1',
+        names2:'İsim 2',
+        date:'',
+        story:'',
+        outro:'',
+        highlights:[],
+        chapters:[],
+        videoUrl:'',
+        timeline:[]
+      })}::jsonb,
       ${photoLimit},
       'draft'
     )

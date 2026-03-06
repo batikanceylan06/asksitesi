@@ -25,17 +25,20 @@ module.exports = async (req, res) => {
   const addons = rows[0].addons || {};
   const allowLock = (plan === 'premium') || (addons.lock === true);
 
+  const clean = {
+    names1: String(content.names1||''),
+    names2: String(content.names2||''),
+    date: String(content.date||''),
+    story: String(content.story||''),
+    outro: String(content.outro||''),
+    highlights: Array.isArray(content.highlights) ? content.highlights : [],
+    chapters: Array.isArray(content.chapters) ? content.chapters : [],
+    videoUrl: String(content.videoUrl||''),
+    timeline: Array.isArray(content.timeline) ? content.timeline : [],
+  };
+
   await sql`
-    UPDATE sites SET content=${
-      JSON.stringify({
-        names1:String(content.names1||''),
-        names2:String(content.names2||''),
-        date:String(content.date||''),
-        story:String(content.story||''),
-        outro:String(content.outro||''),
-        timeline: content.timeline || []
-      })
-    }::jsonb, updated_at=now()
+    UPDATE sites SET content=${JSON.stringify(clean)}::jsonb, updated_at=now()
     WHERE slug=${slug};
   `;
 
