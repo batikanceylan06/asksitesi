@@ -4,7 +4,7 @@
   "version": "0.2.0",
   "scripts": {
     "dev": "vercel dev",
-    "build": "node scripts/build.js",
+    "build": "echo \"Static build: using public/\"",
     "start": "node -e \"console.log('askimiz.com')\""
   },
   "dependencies": {
